@@ -14,6 +14,7 @@ export interface CurrentUser {
   email: string;
   displayName: string;
   preferredLanguage: string;
+  isAdmin: boolean;
   membership: Membership | null;
 }
 

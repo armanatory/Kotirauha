@@ -9,15 +9,19 @@ const navItems = [
   { to: "/insights", key: "nav.insights", boardOnly: true },
   { to: "/building", key: "nav.building" },
   { to: "/export", key: "nav.export" },
+  { to: "/admin", key: "nav.admin", adminOnly: true },
   { to: "/profile", key: "nav.profile" },
-];
+] as { to: string; key: string; boardOnly?: boolean; adminOnly?: boolean }[];
 
 export default function AppLayout() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const isBoard = user?.membership?.role === "board" || user?.membership?.role === "admin";
-  const visibleNav = navItems.filter((item) => !item.boardOnly || isBoard);
+  const isAdmin = user?.isAdmin ?? false;
+  const visibleNav = navItems.filter(
+    (item) => (!item.boardOnly || isBoard) && (!item.adminOnly || isAdmin),
+  );
 
   function handleLogout() {
     logout();

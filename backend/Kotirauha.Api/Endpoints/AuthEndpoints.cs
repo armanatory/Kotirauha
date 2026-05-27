@@ -12,7 +12,7 @@ public record LoginRequest(string Email, string Password);
 public record TokenResponse(string Token);
 
 public record MembershipDto(Guid BuildingId, string BuildingName, string SharedLanguage, string Role, string? ApartmentNumber);
-public record CurrentUserDto(Guid Id, string Email, string DisplayName, string PreferredLanguage, MembershipDto? Membership);
+public record CurrentUserDto(Guid Id, string Email, string DisplayName, string PreferredLanguage, bool IsAdmin, MembershipDto? Membership);
 
 public static class AuthEndpoints
 {
@@ -75,7 +75,7 @@ public static class AuthEndpoints
                     membership.ApartmentNumber);
 
             return Results.Ok(new CurrentUserDto(
-                user.Id, user.Email, user.DisplayName, user.PreferredLanguage, dto));
+                user.Id, user.Email, user.DisplayName, user.PreferredLanguage, user.IsPlatformAdmin, dto));
         }).RequireAuthorization();
 
         return api;

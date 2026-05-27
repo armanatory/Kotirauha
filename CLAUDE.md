@@ -49,9 +49,26 @@ docs/                             # Foundation, master plan, specs, ADRs
 
 ## Spec status
 
-- Nothing is built yet. `docs/specs/` holds the V1 plan (01–07); the
-  master plan is the ordered backlog.
+- **V1 shipped (specs 01–07)**: scaffold, auth, buildings/membership, incident
+  entries (create/edit-with-revision/archive), AI translation (provider interface
+  + Anthropic/stub), timeline + search, printable export with neutrality footer.
+- **V2 (spec 08)**: board insights/patterns + multi-image attachments.
+- **V3 (spec 09)**: on-demand per-user translation (multi-building switching +
+  digests deferred).
+- **V4 (spec 10)**: platform-admin operator console (stats, buildings,
+  translation-provider status).
+- All verified end-to-end with Playwright against live Postgres. Each spec's
+  `Status` section records what shipped vs deferred.
 - When a spec lands in code, mark its `Status` section and note it here.
+
+## Running it locally (dev)
+
+- Postgres in Docker: `docker run -d --name kotirauha-pg -e POSTGRES_DB=kotirauha
+  -e POSTGRES_USER=kotirauha -e POSTGRES_PASSWORD=kotirauha -p 5432:5432 postgres:16`
+- Backend: from `backend/Kotirauha.Api`, `dotnet run` (listens on :5000, migrates
+  on start). Env: `DATABASE_URL`, optional `ADMIN_EMAIL` to seed a platform admin,
+  optional `TRANSLATION_PROVIDER=anthropic` + `ANTHROPIC_API_KEY` for real translation.
+- Frontend: from `frontend`, `npm run dev` (Vite :5173, proxies `/api` → :5000).
 
 ## Key product rules (do not violate)
 

@@ -9,6 +9,7 @@ public class User
     public string PreferredLanguage { get; set; } = "en";
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
     public bool IsActive { get; set; } = true;
+    public bool IsPlatformAdmin { get; set; }
 
     public ICollection<BuildingMembership> Memberships { get; set; } = new List<BuildingMembership>();
 }
