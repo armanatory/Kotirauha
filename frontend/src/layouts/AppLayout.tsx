@@ -6,6 +6,7 @@ import { BRAND } from "@/lib/branding";
 const navItems = [
   { to: "/timeline", key: "nav.timeline" },
   { to: "/entries/new", key: "nav.newEntry" },
+  { to: "/insights", key: "nav.insights", boardOnly: true },
   { to: "/building", key: "nav.building" },
   { to: "/export", key: "nav.export" },
   { to: "/profile", key: "nav.profile" },
@@ -15,6 +16,8 @@ export default function AppLayout() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const isBoard = user?.membership?.role === "board" || user?.membership?.role === "admin";
+  const visibleNav = navItems.filter((item) => !item.boardOnly || isBoard);
 
   function handleLogout() {
     logout();
@@ -26,7 +29,7 @@ export default function AppLayout() {
       <aside className="hidden md:flex md:flex-col w-60 bg-white border-r border-slate-200 p-4">
         <div className="text-xl font-semibold text-slate-800 mb-6">{BRAND.name}</div>
         <nav className="flex flex-col gap-1">
-          {navItems.map((item) => (
+          {visibleNav.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -60,7 +63,7 @@ export default function AppLayout() {
         </main>
 
         <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white border-t border-slate-200 flex justify-around py-2">
-          {navItems.map((item) => (
+          {visibleNav.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

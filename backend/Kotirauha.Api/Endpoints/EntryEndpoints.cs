@@ -15,7 +15,7 @@ public record EntryDetailDto(
     Guid Id, string Category, DateTimeOffset OccurredAt, string ReporterName, Guid ReporterUserId,
     string? SubjectApartment, string OriginalText, string OriginalLanguage,
     string SharedLanguage, IReadOnlyList<TranslationDto> Translations,
-    Guid? AttachmentId, DateTimeOffset CreatedAt, DateTimeOffset? EditedAt,
+    IReadOnlyList<Guid> AttachmentIds, DateTimeOffset CreatedAt, DateTimeOffset? EditedAt,
     bool Archived, IReadOnlyList<RevisionDto> Revisions);
 public record RevisionDto(Guid Id, string PreviousText, DateTimeOffset EditedAt);
 
@@ -57,8 +57,8 @@ public static class EntryEndpoints
             };
             db.Entries.Add(entry);
 
-            var file = form.Files.GetFile("image");
-            if (file is not null && file.Length > 0)
+            // Accept one or more images (form field "image" may repeat).
+            foreach (var file in form.Files.Where(f => f.Length > 0))
             {
                 if (!file.ContentType.StartsWith("image/"))
                     return Results.Problem("Only image attachments are allowed.", statusCode: 400);
@@ -214,8 +214,9 @@ public static class EntryEndpoints
             return Results.Ok(new { id = e.Id });
         });
 
-        // --- Attachment fetch ---
-        group.MapGet("/{id:guid}/attachment", async (Guid id, HttpContext ctx, KotirauhaDbContext db, IAttachmentStore store) =>
+        // --- Attachment fetch by attachment id (building-scoped) ---
+        group.MapGet("/{id:guid}/attachments/{attachmentId:guid}", async (
+            Guid id, Guid attachmentId, HttpContext ctx, KotirauhaDbContext db, IAttachmentStore store) =>
         {
             var userId = ctx.User.GetUserId();
             if (userId is null) return Results.Unauthorized();
@@ -224,7 +225,7 @@ public static class EntryEndpoints
 
             var att = await db.Attachments
                 .Include(a => a.Entry)
-                .FirstOrDefaultAsync(a => a.EntryId == id && a.Entry!.BuildingId == m.BuildingId);
+                .FirstOrDefaultAsync(a => a.Id == attachmentId && a.EntryId == id && a.Entry!.BuildingId == m.BuildingId);
             if (att is null) return Results.NotFound();
 
             var file = await store.GetAsync(att.StorageKey);
@@ -258,7 +259,7 @@ public static class EntryEndpoints
         sharedLanguage,
         e.Translations.Select(t => new TranslationDto(
             t.TargetLanguage, t.TranslatedText, t.Provider, t.Status.ToString().ToLowerInvariant(), t.IsMachineGenerated)).ToList(),
-        e.Attachments.Select(a => (Guid?)a.Id).FirstOrDefault(),
+        e.Attachments.Select(a => a.Id).ToList(),
         e.CreatedAt,
         e.EditedAt,
         e.ArchivedAt is not null,

@@ -10,6 +10,7 @@ import TimelinePage from "@/pages/TimelinePage";
 import NewEntryPage from "@/pages/NewEntryPage";
 import EntryDetailPage from "@/pages/EntryDetailPage";
 import BuildingPage from "@/pages/BuildingPage";
+import InsightsPage from "@/pages/InsightsPage";
 import ExportPage from "@/pages/ExportPage";
 import ProfilePage from "@/pages/ProfilePage";
 import NotFoundPage from "@/pages/NotFoundPage";
@@ -41,6 +42,7 @@ export default function App() {
           <Route path="/entries/new" element={<NewEntryPage />} />
           <Route path="/entries/:id" element={<EntryDetailPage />} />
           <Route path="/building" element={<BuildingPage />} />
+          <Route path="/insights" element={<InsightsPage />} />
           <Route path="/export" element={<ExportPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<NotFoundPage />} />

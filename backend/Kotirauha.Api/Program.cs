@@ -60,6 +60,7 @@ api.MapAuthEndpoints();
 api.MapBuildingEndpoints();
 api.MapEntryEndpoints();
 api.MapExportEndpoints();
+api.MapInsightsEndpoints();
 
 app.Run();
 

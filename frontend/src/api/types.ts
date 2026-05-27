@@ -56,7 +56,7 @@ export interface EntryDetail {
   originalLanguage: string;
   sharedLanguage: string;
   translations: TranslationDto[];
-  attachmentId: string | null;
+  attachmentIds: string[];
   createdAt: string;
   editedAt: string | null;
   archived: boolean;

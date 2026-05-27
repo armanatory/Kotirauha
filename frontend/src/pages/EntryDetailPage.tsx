@@ -121,10 +121,21 @@ export default function EntryDetailPage() {
         </section>
       )}
 
-      {e.attachmentId && (
+      {e.attachmentIds.length > 0 && (
         <section>
-          <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Attachment</div>
-          <img src={`/api/v1/entries/${e.id}/attachment`} alt="attachment" className="max-h-80 rounded-lg border border-slate-200" />
+          <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">
+            Attachment{e.attachmentIds.length > 1 ? "s" : ""}
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {e.attachmentIds.map((aid) => (
+              <img
+                key={aid}
+                src={`/api/v1/entries/${e.id}/attachments/${aid}`}
+                alt="attachment"
+                className="max-h-80 rounded-lg border border-slate-200"
+              />
+            ))}
+          </div>
         </section>
       )}
 

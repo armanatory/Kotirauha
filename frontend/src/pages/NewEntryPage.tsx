@@ -27,7 +27,7 @@ export default function NewEntryPage() {
   const [language, setLanguage] = useState(user?.preferredLanguage ?? "en");
   const [text, setText] = useState("");
   const [subjectApartment, setSubjectApartment] = useState("");
-  const [image, setImage] = useState<File | null>(null);
+  const [images, setImages] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   if (!user?.membership) {
@@ -48,7 +48,7 @@ export default function NewEntryPage() {
       fd.append("occurredAt", new Date(occurredAt).toISOString());
       fd.append("originalLanguage", language);
       if (subjectApartment) fd.append("subjectApartment", subjectApartment);
-      if (image) fd.append("image", image);
+      images.forEach((img) => fd.append("image", img));
       const { data } = await api.post<{ id: string }>("/entries", fd);
       toast.success("Entry recorded.");
       navigate(`/entries/${data.id}`);
@@ -110,8 +110,14 @@ export default function NewEntryPage() {
       </label>
 
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-slate-600">Image (optional)</span>
-        <input type="file" accept="image/*" onChange={(e) => setImage(e.target.files?.[0] ?? null)} className="text-sm" />
+        <span className="text-slate-600">Images (optional)</span>
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={(e) => setImages(Array.from(e.target.files ?? []))}
+          className="text-sm"
+        />
       </label>
 
       <button
