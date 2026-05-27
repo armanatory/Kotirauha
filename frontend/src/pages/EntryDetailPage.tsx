@@ -50,11 +50,22 @@ export default function EntryDetailPage() {
     },
   });
 
+  const translate = useMutation({
+    mutationFn: async (language: string) => (await api.post(`/entries/${id}/translate`, { language })).data,
+    onSuccess: () => {
+      toast.success("Translation added.");
+      void qc.invalidateQueries({ queryKey: ["entry", id] });
+    },
+    onError: () => toast.error("Could not translate."),
+  });
+
   if (entryQ.isLoading) return <p className="text-slate-500">Loading…</p>;
   if (!entryQ.data) return <p className="text-slate-500">Entry not found.</p>;
   const e = entryQ.data;
 
-  const translation = e.translations.find((t) => t.targetLanguage === e.sharedLanguage);
+  const viewerLang = user?.preferredLanguage ?? "en";
+  const canOfferViewerTranslation =
+    viewerLang !== e.originalLanguage && !e.translations.some((t) => t.targetLanguage === viewerLang);
 
   return (
     <div className="max-w-2xl space-y-5">
@@ -105,10 +116,11 @@ export default function EntryDetailPage() {
         )}
       </section>
 
-      {translation && (
-        <section className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+      {e.translations.map((translation) => (
+        <section key={translation.targetLanguage} className="bg-slate-50 border border-slate-200 rounded-xl p-4">
           <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">
-            Translation · {e.sharedLanguage}
+            Translation · {translation.targetLanguage}
+            {translation.targetLanguage === e.sharedLanguage && " (building shared)"}
           </div>
           {translation.status === "completed" ? (
             <>
@@ -119,6 +131,16 @@ export default function EntryDetailPage() {
             <p className="text-sm text-slate-400 italic">Translation {translation.status}, retrying…</p>
           )}
         </section>
+      ))}
+
+      {canOfferViewerTranslation && (
+        <button
+          onClick={() => translate.mutate(viewerLang)}
+          disabled={translate.isPending}
+          className="text-sm text-slate-600 underline hover:text-slate-900 disabled:opacity-50"
+        >
+          Translate to my language ({viewerLang})
+        </button>
       )}
 
       {e.attachmentIds.length > 0 && (

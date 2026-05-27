@@ -214,6 +214,34 @@ public static class EntryEndpoints
             return Results.Ok(new { id = e.Id });
         });
 
+        // --- On-demand translation into any language (any member) ---
+        group.MapPost("/{id:guid}/translate", async (Guid id, TranslateRequest req, HttpContext ctx,
+            KotirauhaDbContext db, EntryTranslationService translator) =>
+        {
+            var userId = ctx.User.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+            var m = await db.GetMembershipAsync(userId.Value);
+            if (m is null) return Results.NotFound();
+
+            var lang = req.Language?.Trim();
+            if (string.IsNullOrWhiteSpace(lang)) return Results.Problem("Language is required.", statusCode: 400);
+
+            var entry = await db.Entries
+                .Include(e => e.Translations)
+                .FirstOrDefaultAsync(e => e.Id == id && e.BuildingId == m.BuildingId);
+            if (entry is null) return Results.NotFound();
+
+            var existing = entry.Translations.FirstOrDefault(x => x.TargetLanguage == lang);
+            if (existing is null || existing.Status != TranslationStatus.Completed)
+                await translator.TranslateEntryAsync(entry.Id, lang);
+
+            var t = await db.Translations.FirstOrDefaultAsync(x => x.EntryId == entry.Id && x.TargetLanguage == lang);
+            if (t is null)
+                return Results.Ok(new TranslationDto(lang, entry.OriginalText, "none", "completed", false));
+            return Results.Ok(new TranslationDto(
+                t.TargetLanguage, t.TranslatedText, t.Provider, t.Status.ToString().ToLowerInvariant(), t.IsMachineGenerated));
+        });
+
         // --- Attachment fetch by attachment id (building-scoped) ---
         group.MapGet("/{id:guid}/attachments/{attachmentId:guid}", async (
             Guid id, Guid attachmentId, HttpContext ctx, KotirauhaDbContext db, IAttachmentStore store) =>
@@ -267,3 +295,4 @@ public static class EntryEndpoints
 }
 
 public record EditEntryRequest(string? OriginalText, DateTimeOffset? OccurredAt, string? Category, string? SubjectApartment);
+public record TranslateRequest(string Language);
