@@ -3,14 +3,16 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthContext";
+import { LANGUAGES } from "@/api/types";
 
 export default function RegisterPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { register } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
+  const [language, setLanguage] = useState(i18n.language || "en");
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -18,7 +20,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await register({ email, password, displayName, preferredLanguage: "en" });
+      await register({ email, password, displayName, preferredLanguage: language });
       navigate("/building");
     } catch (err: unknown) {
       const message =
@@ -71,6 +73,18 @@ export default function RegisterPage() {
             {showPassword ? "Hide" : "Show"}
           </button>
         </div>
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="text-slate-600">Your language</span>
+        <select
+          value={language}
+          onChange={(e) => setLanguage(e.target.value)}
+          className="border border-slate-300 rounded-lg px-3 py-2"
+        >
+          {LANGUAGES.map((l) => (
+            <option key={l.code} value={l.code}>{l.label}</option>
+          ))}
+        </select>
       </label>
       <button
         type="submit"

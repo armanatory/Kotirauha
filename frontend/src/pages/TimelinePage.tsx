@@ -100,10 +100,19 @@ export default function TimelinePage() {
         </ul>
       ) : (
         <div className="text-center text-slate-500 py-16">
-          <p>No entries yet.</p>
-          <Link to="/entries/new" className="text-slate-700 underline text-sm">Record the first one</Link>
+          <p>Nothing reported yet.</p>
+          <Link to="/entries/new" className="text-slate-700 underline text-sm">Report something</Link>
         </div>
       )}
+
+      {/* Always-visible report action on phones */}
+      <Link
+        to="/entries/new"
+        className="md:hidden fixed bottom-20 right-4 z-20 inline-flex items-center gap-2 bg-slate-900 text-white rounded-full pl-4 pr-5 py-3 shadow-lg active:scale-95 transition"
+      >
+        <span className="text-xl leading-none">＋</span>
+        <span className="font-semibold">Report</span>
+      </Link>
     </div>
   );
 }

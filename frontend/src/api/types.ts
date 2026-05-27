@@ -19,6 +19,27 @@ export const CATEGORY_LABELS: Record<Category, string> = {
   Other: "Other",
 };
 
+// Short label + emoji for the big tappable chips in quick capture.
+export const CATEGORY_META: Record<Category, { emoji: string; short: string }> = {
+  Noise: { emoji: "🔊", short: "Noise" },
+  Smell: { emoji: "👃", short: "Smell" },
+  SmokingOrIncense: { emoji: "🚬", short: "Smoke" },
+  Parking: { emoji: "🅿️", short: "Parking" },
+  SafetyConcern: { emoji: "⚠️", short: "Safety" },
+  CommonAreaMisuse: { emoji: "🧹", short: "Shared space" },
+  Other: { emoji: "📝", short: "Other" },
+};
+
+export const LANGUAGES = [
+  { code: "en", label: "English" },
+  { code: "fi", label: "Suomi" },
+  { code: "sv", label: "Svenska" },
+  { code: "ar", label: "العربية" },
+  { code: "ru", label: "Русский" },
+  { code: "et", label: "Eesti" },
+  { code: "so", label: "Soomaali" },
+] as const;
+
 export interface EntryListItem {
   id: string;
   category: Category;
