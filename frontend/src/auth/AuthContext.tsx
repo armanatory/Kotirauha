@@ -18,11 +18,18 @@ export interface CurrentUser {
   membership: Membership | null;
 }
 
+interface MagicLinkInput {
+  email: string;
+  displayName?: string;
+  preferredLanguage?: string;
+}
+
 interface AuthState {
   user: CurrentUser | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (input: { email: string; password: string; displayName: string; preferredLanguage: string }) => Promise<void>;
+  requestMagicLink: (input: MagicLinkInput) => Promise<{ devLink?: string }>;
+  verify: (token: string) => Promise<{ profileComplete: boolean }>;
+  updateProfile: (input: { displayName?: string; preferredLanguage?: string }) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
 }
@@ -53,15 +60,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void refresh();
   }, []);
 
-  async function login(email: string, password: string) {
-    const { data } = await api.post<{ token: string }>("/auth/login", { email, password });
-    setToken(data.token);
-    await refresh();
+  async function requestMagicLink(input: MagicLinkInput) {
+    const { data } = await api.post<{ sent: boolean; devLink?: string }>("/auth/magic-link", input);
+    return { devLink: data.devLink };
   }
 
-  async function register(input: { email: string; password: string; displayName: string; preferredLanguage: string }) {
-    const { data } = await api.post<{ token: string }>("/auth/register", input);
+  async function verify(token: string) {
+    const { data } = await api.post<{ token: string; profileComplete: boolean }>("/auth/verify", { token });
     setToken(data.token);
+    await refresh();
+    return { profileComplete: data.profileComplete };
+  }
+
+  async function updateProfile(input: { displayName?: string; preferredLanguage?: string }) {
+    await api.patch("/auth/me", input);
     await refresh();
   }
 
@@ -71,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, refresh }}>
+    <AuthContext.Provider value={{ user, loading, requestMagicLink, verify, updateProfile, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

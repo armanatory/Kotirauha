@@ -93,7 +93,7 @@ public static class ExportEndpoints
             sb.Append($"<span>Occurred: {e.OccurredAt:yyyy-MM-dd HH:mm}</span>");
             sb.Append($"<span>Logged: {e.CreatedAt:yyyy-MM-dd HH:mm}</span>");
             sb.Append($"<span>Reporter: {E(e.Reporter!.DisplayName)}</span>");
-            if (!string.IsNullOrWhiteSpace(e.SubjectApartment)) sb.Append($"<span>Apartment: {E(e.SubjectApartment)}</span>");
+            if (!string.IsNullOrWhiteSpace(e.SubjectApartment)) sb.Append($"<span>Location: {E(e.SubjectApartment)}</span>");
             if (e.EditedAt is not null) sb.Append("<span class=\"flag\">edited</span>");
             if (e.ArchivedAt is not null) sb.Append("<span class=\"flag\">archived</span>");
             sb.Append("</div>");

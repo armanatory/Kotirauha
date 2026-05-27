@@ -79,7 +79,7 @@ export default function EntryDetailPage() {
           </p>
           <p className="text-sm text-slate-500">
             Reporter: {e.reporterName}
-            {e.subjectApartment && ` · Apartment ${e.subjectApartment}`}
+            {e.subjectApartment && ` · 📍 ${e.subjectApartment}`}
           </p>
           <div className="flex gap-2 mt-1">
             {e.editedAt && <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700">edited</span>}

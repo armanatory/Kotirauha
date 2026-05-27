@@ -1,42 +1,57 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthContext";
 import { LANGUAGES } from "@/api/types";
 
 export default function RegisterPage() {
-  const { t, i18n } = useTranslation();
-  const { register } = useAuth();
-  const navigate = useNavigate();
+  const { i18n } = useTranslation();
+  const { requestMagicLink } = useAuth();
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [password, setPassword] = useState("");
-  const [language, setLanguage] = useState(i18n.language || "en");
-  const [showPassword, setShowPassword] = useState(false);
+  const [language, setLanguage] = useState(i18n.language === "en" ? "en" : "fi");
   const [submitting, setSubmitting] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [devLink, setDevLink] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      await register({ email, password, displayName, preferredLanguage: language });
-      navigate("/building");
-    } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail ??
-        "Could not create account.";
-      toast.error(message);
+      const { devLink } = await requestMagicLink({ email, displayName, preferredLanguage: language });
+      setDevLink(devLink ?? null);
+      setSent(true);
+    } catch {
+      toast.error("Could not send the link. Please try again.");
     } finally {
       setSubmitting(false);
     }
   }
 
+  if (sent) {
+    return (
+      <div className="text-center">
+        <h2 className="text-lg font-semibold text-slate-800">Check your email</h2>
+        <p className="text-sm text-slate-500 mt-2">
+          We sent a login link to <span className="font-medium">{email}</span>. Open it on this
+          device to finish signing up.
+        </p>
+        {devLink && (
+          <a href={devLink} className="inline-block mt-4 bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-medium">
+            Open login link (dev)
+          </a>
+        )}
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold text-slate-800">{t("auth.register")}</h2>
+      <h2 className="text-lg font-semibold text-slate-800">Create account</h2>
+      <p className="text-sm text-slate-500">No password needed. We will email you a login link.</p>
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-slate-600">{t("auth.displayName")}</span>
+        <span className="text-slate-600">Your name</span>
         <input
           required
           value={displayName}
@@ -45,7 +60,7 @@ export default function RegisterPage() {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-slate-600">{t("auth.email")}</span>
+        <span className="text-slate-600">Email</span>
         <input
           type="email"
           required
@@ -53,26 +68,6 @@ export default function RegisterPage() {
           onChange={(e) => setEmail(e.target.value)}
           className="border border-slate-300 rounded-lg px-3 py-2"
         />
-      </label>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-slate-600">{t("auth.password")}</span>
-        <div className="flex">
-          <input
-            type={showPassword ? "text" : "password"}
-            required
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="border border-slate-300 rounded-l-lg px-3 py-2 flex-1"
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword((v) => !v)}
-            className="border border-l-0 border-slate-300 rounded-r-lg px-3 text-xs text-slate-500"
-          >
-            {showPassword ? "Hide" : "Show"}
-          </button>
-        </div>
       </label>
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-slate-600">Your language</span>
@@ -89,14 +84,12 @@ export default function RegisterPage() {
       <button
         type="submit"
         disabled={submitting}
-        className="bg-slate-900 text-white rounded-lg py-2 text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
+        className="bg-slate-900 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
       >
-        {t("auth.register")}
+        {submitting ? "Sending…" : "Send login link"}
       </button>
       <p className="text-sm text-slate-500 text-center">
-        <Link to="/login" className="text-slate-700 underline">
-          {t("auth.login")}
-        </Link>
+        Already have an account? <Link to="/login" className="text-slate-700 underline">Log in</Link>
       </p>
     </form>
   );

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useAuth } from "@/auth/AuthContext";
@@ -28,11 +28,7 @@ export default function TimelinePage() {
   });
 
   if (!user?.membership) {
-    return (
-      <p className="text-slate-500">
-        Join a building first on the <Link to="/building" className="underline">Building</Link> page.
-      </p>
-    );
+    return <Navigate to="/building" replace />;
   }
 
   return (
@@ -87,7 +83,7 @@ export default function TimelinePage() {
                 <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
                   <span className="font-semibold text-slate-700">{CATEGORY_LABELS[e.category]}</span>
                   <span>· {new Date(e.occurredAt).toLocaleString()}</span>
-                  {e.subjectApartment && <span>· Apt {e.subjectApartment}</span>}
+                  {e.subjectApartment && <span>· 📍 {e.subjectApartment}</span>}
                   {e.hasAttachment && <span>· 📎</span>}
                   {e.edited && <span className="text-amber-600">· edited</span>}
                   {e.archived && <span className="text-rose-600">· archived</span>}
@@ -104,15 +100,6 @@ export default function TimelinePage() {
           <Link to="/entries/new" className="text-slate-700 underline text-sm">Report something</Link>
         </div>
       )}
-
-      {/* Always-visible report action on phones */}
-      <Link
-        to="/entries/new"
-        className="md:hidden fixed bottom-20 right-4 z-20 inline-flex items-center gap-2 bg-slate-900 text-white rounded-full pl-4 pr-5 py-3 shadow-lg active:scale-95 transition"
-      >
-        <span className="text-xl leading-none">＋</span>
-        <span className="font-semibold">Report</span>
-      </Link>
     </div>
   );
 }

@@ -30,14 +30,10 @@ export const CATEGORY_META: Record<Category, { emoji: string; short: string }> =
   Other: { emoji: "📝", short: "Other" },
 };
 
+// Bilingual product: English and Finnish only.
 export const LANGUAGES = [
-  { code: "en", label: "English" },
   { code: "fi", label: "Suomi" },
-  { code: "sv", label: "Svenska" },
-  { code: "ar", label: "العربية" },
-  { code: "ru", label: "Русский" },
-  { code: "et", label: "Eesti" },
-  { code: "so", label: "Soomaali" },
+  { code: "en", label: "English" },
 ] as const;
 
 export interface EntryListItem {

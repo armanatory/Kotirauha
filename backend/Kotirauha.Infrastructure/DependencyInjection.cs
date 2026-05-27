@@ -2,6 +2,7 @@ using Kotirauha.Core.Abstractions;
 using Kotirauha.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Kotirauha.Infrastructure;
 
@@ -14,8 +15,7 @@ public static class DependencyInjection
             ?? "Host=localhost;Database=kotirauha;Username=kotirauha;Password=kotirauha";
 
         services.AddDbContext<KotirauhaDbContext>(options => options.UseNpgsql(connectionString));
-
-        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        services.AddHttpClient();
 
         services.AddSingleton(new JwtSettings
         {
@@ -31,6 +31,7 @@ public static class DependencyInjection
         services.AddSingleton<IAttachmentStore>(new LocalAttachmentStore(uploadRoot));
 
         RegisterTranslationProvider(services);
+        RegisterEmailSender(services);
 
         services.AddScoped<EntryTranslationService>();
 
@@ -39,22 +40,51 @@ public static class DependencyInjection
 
     private static void RegisterTranslationProvider(IServiceCollection services)
     {
-        var provider = (Environment.GetEnvironmentVariable("TRANSLATION_PROVIDER") ?? "stub").ToLowerInvariant();
-        var apiKey = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY");
+        var explicitProvider = Environment.GetEnvironmentVariable("TRANSLATION_PROVIDER")?.ToLowerInvariant();
+        var openAiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        var anthropicKey = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY");
 
-        if (provider == "anthropic" && !string.IsNullOrWhiteSpace(apiKey))
+        // Priority: explicit choice, then whichever key is present, then offline stub.
+        var provider = explicitProvider
+            ?? (!string.IsNullOrWhiteSpace(openAiKey) ? "openai"
+                : !string.IsNullOrWhiteSpace(anthropicKey) ? "anthropic"
+                : "stub");
+
+        if (provider == "openai" && !string.IsNullOrWhiteSpace(openAiKey))
+        {
+            var model = Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-4o-mini";
+            services.AddSingleton<ITranslationProvider>(sp =>
+                new OpenAiTranslationProvider(sp.GetRequiredService<IHttpClientFactory>().CreateClient(), openAiKey!, model));
+        }
+        else if (provider == "anthropic" && !string.IsNullOrWhiteSpace(anthropicKey))
         {
             var model = Environment.GetEnvironmentVariable("ANTHROPIC_MODEL") ?? "claude-sonnet-4-6";
-            services.AddHttpClient();
             services.AddSingleton<ITranslationProvider>(sp =>
-            {
-                var http = sp.GetRequiredService<IHttpClientFactory>().CreateClient();
-                return new AnthropicTranslationProvider(http, apiKey!, model);
-            });
+                new AnthropicTranslationProvider(sp.GetRequiredService<IHttpClientFactory>().CreateClient(), anthropicKey!, model));
         }
         else
         {
             services.AddSingleton<ITranslationProvider, StubTranslationProvider>();
+        }
+    }
+
+    private static void RegisterEmailSender(IServiceCollection services)
+    {
+        var key = Environment.GetEnvironmentVariable("MAILJET_API_KEY");
+        var secret = Environment.GetEnvironmentVariable("MAILJET_API_SECRET");
+        var fromEmail = Environment.GetEnvironmentVariable("MAILJET_FROM_EMAIL");
+        var fromName = Environment.GetEnvironmentVariable("MAILJET_FROM_NAME") ?? "Kotirauha";
+
+        if (!string.IsNullOrWhiteSpace(key) && !string.IsNullOrWhiteSpace(secret) && !string.IsNullOrWhiteSpace(fromEmail))
+        {
+            services.AddSingleton<IEmailSender>(sp => new MailjetEmailSender(
+                sp.GetRequiredService<IHttpClientFactory>().CreateClient(),
+                key!, secret!, fromEmail!, fromName,
+                sp.GetRequiredService<ILogger<MailjetEmailSender>>()));
+        }
+        else
+        {
+            services.AddSingleton<IEmailSender, NoOpEmailSender>();
         }
     }
 }

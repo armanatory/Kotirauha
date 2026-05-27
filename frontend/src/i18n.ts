@@ -4,7 +4,7 @@ import { initReactI18next } from "react-i18next";
 const en = {
   translation: {
     appName: "Kotirauha",
-    nav: { timeline: "Timeline", newEntry: "New entry", insights: "Insights", building: "Building", export: "Export", admin: "Admin", profile: "Profile" },
+    nav: { timeline: "Timeline", newEntry: "Report", insights: "Insights", building: "Building", export: "Export", admin: "Admin", profile: "Profile" },
     auth: {
       login: "Log in",
       register: "Create account",
@@ -19,7 +19,7 @@ const en = {
 const fi = {
   translation: {
     appName: "Kotirauha",
-    nav: { timeline: "Aikajana", newEntry: "Uusi merkintä", insights: "Tilastot", building: "Taloyhtiö", export: "Vienti", admin: "Ylläpito", profile: "Profiili" },
+    nav: { timeline: "Aikajana", newEntry: "Ilmoita", insights: "Tilastot", building: "Taloyhtiö", export: "Vienti", admin: "Ylläpito", profile: "Profiili" },
     auth: {
       login: "Kirjaudu",
       register: "Luo tili",

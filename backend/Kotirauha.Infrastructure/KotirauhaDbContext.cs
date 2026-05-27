@@ -10,6 +10,7 @@ public class KotirauhaDbContext : DbContext
     }
 
     public DbSet<User> Users => Set<User>();
+    public DbSet<MagicLinkToken> MagicLinkTokens => Set<MagicLinkToken>();
     public DbSet<Building> Buildings => Set<Building>();
     public DbSet<BuildingMembership> Memberships => Set<BuildingMembership>();
     public DbSet<IncidentEntry> Entries => Set<IncidentEntry>();
@@ -25,8 +26,15 @@ public class KotirauhaDbContext : DbContext
         {
             e.HasIndex(u => u.Email).IsUnique();
             e.Property(u => u.Email).HasMaxLength(256).IsRequired();
-            e.Property(u => u.DisplayName).HasMaxLength(120).IsRequired();
+            e.Property(u => u.DisplayName).HasMaxLength(120);
             e.Property(u => u.PreferredLanguage).HasMaxLength(16);
+        });
+
+        b.Entity<MagicLinkToken>(e =>
+        {
+            e.Property(x => x.Email).HasMaxLength(256).IsRequired();
+            e.Property(x => x.TokenHash).HasMaxLength(128).IsRequired();
+            e.HasIndex(x => x.TokenHash);
         });
 
         b.Entity<Building>(e =>

@@ -29,11 +29,24 @@ explicitly tell you not to.** This is the default mode of work for this repo:
 
 ## Stack
 
-- Backend: .NET 10 minimal API, EF Core 10, PostgreSQL 16, JWT auth
-- Frontend: React 18 + Vite + TypeScript (strict) + Tailwind
-- AI translation: Anthropic Claude (default) behind a provider interface; one
-  active provider per environment (see ADR 002)
+- Backend: .NET 10 minimal API, EF Core 10, PostgreSQL 16
+- Auth: **passwordless email magic-link** (JWT session); Google sign-in planned
+  later. Never reintroduce passwords.
+- Frontend: React 19 + Vite + TypeScript (strict) + Tailwind v4; installable PWA
+- AI translation: provider interface; **OpenAI** when `OPENAI_API_KEY` is set,
+  else Anthropic, else an offline stub. Prompt is strict: faithful, no fluff,
+  spelling-only fixes, never an em dash (see ADR 002).
+- Email: Mailjet (magic-link login emails) behind `IEmailSender`; no-op when unset
+- Languages: **bilingual only — English and Finnish**
 - Hosting: Docker Compose + Caddy on a single VPS (see ADR 004)
+
+## Secrets / .env
+
+The backend loads `.env` from the repo root on startup (DotNetEnv). Relevant
+vars: `OPENAI_API_KEY` (+ optional `OPENAI_MODEL`), `MAILJET_API_KEY` /
+`MAILJET_API_SECRET` / `MAILJET_FROM_EMAIL` / `MAILJET_FROM_NAME`,
+`APP_BASE_URL` (for magic-link URLs), `JWT_SECRET`, optional `ADMIN_EMAIL`.
+Never read, print, or commit `.env`.
 
 ## Folder layout
 

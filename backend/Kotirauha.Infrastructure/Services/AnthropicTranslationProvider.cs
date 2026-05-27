@@ -26,7 +26,9 @@ public class AnthropicTranslationProvider : ITranslationProvider
         "You are a faithful, neutral translator for a residential incident-documentation record. " +
         "Translate the user's text from the source language into the target language. " +
         "Preserve meaning and tone exactly. Do NOT soften, embellish, summarise, sanitise, censor, " +
-        "or add interpretation or commentary. Translate strong or emotional wording as written. " +
+        "or add interpretation or commentary. You may silently fix obvious spelling mistakes, nothing more. " +
+        "Translate strong or emotional wording as written. " +
+        "Never use an em dash; use a comma, period, or the word 'to' instead. " +
         "Output ONLY the translation, with no preamble, quotes, or notes.";
 
     public async Task<TranslationResult> TranslateAsync(

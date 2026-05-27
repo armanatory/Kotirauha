@@ -8,7 +8,6 @@ import type { BuildingDto, MemberDto } from "@/api/types";
 const LANGS = [
   { code: "fi", label: "Finnish" },
   { code: "en", label: "English" },
-  { code: "sv", label: "Swedish" },
 ];
 
 export default function BuildingPage() {

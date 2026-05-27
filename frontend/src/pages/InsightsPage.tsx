@@ -86,7 +86,7 @@ export default function InsightsPage() {
             <thead>
               <tr className="text-left text-slate-400 text-xs">
                 <th className="py-1">Category</th>
-                <th>Apartment</th>
+                <th>Where</th>
                 <th>Count</th>
                 <th>First</th>
                 <th>Last</th>

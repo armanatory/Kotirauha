@@ -77,5 +77,9 @@ write/edit/archive of an entry requires the caller to be its reporter
 ---
 
 ## Status
-- [x] Shipped (V1). register/login/me, BCrypt, JWT, route guards, no anonymous
-      access. forgot/reset-password endpoints deferred. Verified via Playwright.
+- [x] Reworked to **passwordless magic-link** (no passwords — by product decision).
+      `POST /auth/magic-link` emails a one-time link (Mailjet; dev returns the link
+      in the response), `POST /auth/verify` exchanges the token for a JWT, single-use
+      + 20-min expiry. `PATCH /auth/me` edits name/language; new users complete their
+      name after first sign-in. Google sign-in planned later. No password, no
+      forgot/reset flow. Verified via Playwright.

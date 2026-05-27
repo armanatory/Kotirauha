@@ -2,10 +2,9 @@ using Kotirauha.Core.Domain;
 
 namespace Kotirauha.Core.Abstractions;
 
-public interface IPasswordHasher
+public interface IEmailSender
 {
-    string Hash(string password);
-    bool Verify(string password, string hash);
+    Task SendAsync(string toEmail, string subject, string htmlBody, string textBody, CancellationToken ct = default);
 }
 
 public interface IJwtTokenService
