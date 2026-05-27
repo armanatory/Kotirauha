@@ -88,4 +88,5 @@ building from their membership and scope every query by `building_id`.
 ---
 
 ## Status
-- [ ] Not yet started
+- [x] Shipped (V1). Create/join via code, board auto-role, members list, join-code
+      regenerate, building-scoped access. Verified via Playwright.

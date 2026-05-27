@@ -77,4 +77,5 @@ write/edit/archive of an entry requires the caller to be its reporter
 ---
 
 ## Status
-- [ ] Not yet started
+- [x] Shipped (V1). register/login/me, BCrypt, JWT, route guards, no anonymous
+      access. forgot/reset-password endpoints deferred. Verified via Playwright.

@@ -91,4 +91,7 @@ state.
 ---
 
 ## Status
-- [ ] Not yet started
+- [x] Shipped (V1). ITranslationProvider with Anthropic + stub impls (stub used
+      when no API key), translate-on-create and on-edit into shared language,
+      labelled UI, original never overwritten. Background retry of failed
+      translations still TODO. Verified via Playwright (stub provider).

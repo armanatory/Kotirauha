@@ -105,4 +105,5 @@ current description, then re-translates.
 ---
 
 ## Status
-- [ ] Not yet started
+- [x] Shipped (V1). Multipart create with optional image, edit→revision (original
+      preserved), archive/restore, building scoping. Verified via Playwright.

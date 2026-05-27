@@ -61,4 +61,6 @@ present, else original), whether an attachment exists, and the `edited` flag.
 ---
 
 ## Status
-- [ ] Not yet started
+- [x] Shipped (V1). Building-scoped list, category/date filters, keyword search
+      (ILIKE over original + translation), board include-archived toggle.
+      Proper PostgreSQL FTS is a later enhancement. Verified via Playwright.

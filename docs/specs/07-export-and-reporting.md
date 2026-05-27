@@ -78,4 +78,6 @@ the original in favour of the translation.
 ---
 
 ## Status
-- [ ] Not yet started
+- [x] Shipped (V1) as printable HTML (print-to-PDF in browser). Filters, dual
+      original+labelled translation, edited/archived flags, neutrality footer.
+      Native server-side PDF generation is a later enhancement. Verified via Playwright.
