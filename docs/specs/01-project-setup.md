@@ -199,4 +199,9 @@ Ignore `.env`, `node_modules/`, `frontend/dist/`, `backend/**/bin`,
 ---
 
 ## Status
-- [ ] Not yet started
+- [x] Scaffold shipped: .NET 10 API (`/health`, EF Core + Npgsql, migrate-on-start),
+      React 19 + Vite + TS (strict) + Tailwind v4 app shell with Auth/App layouts,
+      route guards, i18n (en/fi), React Query, sonner. Postgres runs in Docker.
+      Verified with Playwright: landing renders, login renders, protected routes
+      redirect to `/login`, no console errors. CI workflow + production Dockerfiles
+      remain to be added.

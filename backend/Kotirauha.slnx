@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Kotirauha.Api/Kotirauha.Api.csproj" />
+  <Project Path="Kotirauha.Core/Kotirauha.Core.csproj" />
+  <Project Path="Kotirauha.Infrastructure/Kotirauha.Infrastructure.csproj" />
+  <Project Path="Kotirauha.Tests/Kotirauha.Tests.csproj" />
+</Solution>

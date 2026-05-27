@@ -1,0 +1,20 @@
+# Env / secrets
+.env
+*.env.local
+
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# .NET
+backend/**/bin/
+backend/**/obj/
+*.user
+
+# Playwright MCP artifacts
+.playwright-mcp/
+
+# OS
+.DS_Store
+Thumbs.db
