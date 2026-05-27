@@ -1,17 +1,21 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuth } from "@/auth/AuthContext";
-import { CATEGORY_LABELS, type EntryDetail } from "@/api/types";
+import type { EntryDetail } from "@/api/types";
 
 export default function EntryDetailPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
+
+  const langName = (code: string) => t(`languages.${code}`, code);
 
   const entryQ = useQuery({
     queryKey: ["entry", id],
@@ -24,18 +28,18 @@ export default function EntryDetailPage() {
   const save = useMutation({
     mutationFn: async () => (await api.patch(`/entries/${id}`, { originalText: draft })).data,
     onSuccess: () => {
-      toast.success("Entry updated.");
+      toast.success(t("entry.updated"));
       setEditing(false);
       void qc.invalidateQueries({ queryKey: ["entry", id] });
       void qc.invalidateQueries({ queryKey: ["entries"] });
     },
-    onError: () => toast.error("Could not update."),
+    onError: () => toast.error(t("entry.couldNotUpdate")),
   });
 
   const archive = useMutation({
     mutationFn: async () => (await api.post(`/entries/${id}/archive`)).data,
     onSuccess: () => {
-      toast.success("Entry archived.");
+      toast.success(t("entry.archivedToast"));
       void qc.invalidateQueries({ queryKey: ["entry", id] });
       void qc.invalidateQueries({ queryKey: ["entries"] });
     },
@@ -44,7 +48,7 @@ export default function EntryDetailPage() {
   const restore = useMutation({
     mutationFn: async () => (await api.post(`/entries/${id}/restore`)).data,
     onSuccess: () => {
-      toast.success("Entry restored.");
+      toast.success(t("entry.restoredToast"));
       void qc.invalidateQueries({ queryKey: ["entry", id] });
       void qc.invalidateQueries({ queryKey: ["entries"] });
     },
@@ -53,62 +57,62 @@ export default function EntryDetailPage() {
   const translate = useMutation({
     mutationFn: async (language: string) => (await api.post(`/entries/${id}/translate`, { language })).data,
     onSuccess: () => {
-      toast.success("Translation added.");
+      toast.success(t("entry.translationAdded"));
       void qc.invalidateQueries({ queryKey: ["entry", id] });
     },
-    onError: () => toast.error("Could not translate."),
+    onError: () => toast.error(t("entry.couldNotTranslate")),
   });
 
-  if (entryQ.isLoading) return <p className="text-slate-500">Loading…</p>;
-  if (!entryQ.data) return <p className="text-slate-500">Entry not found.</p>;
+  if (entryQ.isLoading) return <p className="text-slate-500">{t("common.loading")}</p>;
+  if (!entryQ.data) return <p className="text-slate-500">{t("entry.notFound")}</p>;
   const e = entryQ.data;
 
   const viewerLang = user?.preferredLanguage ?? "en";
   const canOfferViewerTranslation =
-    viewerLang !== e.originalLanguage && !e.translations.some((t) => t.targetLanguage === viewerLang);
+    viewerLang !== e.originalLanguage && !e.translations.some((tr) => tr.targetLanguage === viewerLang);
 
   return (
     <div className="max-w-2xl space-y-5">
-      <Link to="/timeline" className="text-sm text-slate-500 hover:text-slate-800">← Timeline</Link>
+      <Link to="/timeline" className="text-sm text-slate-500 hover:text-slate-800">← {t("entry.back")}</Link>
 
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-800">{CATEGORY_LABELS[e.category]}</h1>
+          <h1 className="text-xl font-semibold text-slate-800">{t(`categories.full.${e.category}`)}</h1>
           <p className="text-sm text-slate-500">
-            Occurred {new Date(e.occurredAt).toLocaleString()} · Logged {new Date(e.createdAt).toLocaleDateString()}
+            {t("entry.occurred")} {new Date(e.occurredAt).toLocaleString()} · {t("entry.logged")} {new Date(e.createdAt).toLocaleDateString()}
           </p>
           <p className="text-sm text-slate-500">
-            Reporter: {e.reporterName}
+            {t("entry.reporter")}: {e.reporterName}
             {e.subjectApartment && ` · 📍 ${e.subjectApartment}`}
           </p>
           <div className="flex gap-2 mt-1">
-            {e.editedAt && <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700">edited</span>}
-            {e.archived && <span className="text-xs px-2 py-0.5 rounded bg-rose-100 text-rose-700">archived</span>}
+            {e.editedAt && <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700">{t("common.edited")}</span>}
+            {e.archived && <span className="text-xs px-2 py-0.5 rounded bg-rose-100 text-rose-700">{t("common.archived")}</span>}
           </div>
         </div>
         <div className="flex gap-2">
           {isReporter && !e.archived && !editing && (
-            <button onClick={() => { setEditing(true); setDraft(e.originalText); }} className="text-sm text-slate-600 underline">Edit</button>
+            <button onClick={() => { setEditing(true); setDraft(e.originalText); }} className="text-sm text-slate-600 underline">{t("entry.edit")}</button>
           )}
           {(isReporter || isBoard) && !e.archived && (
-            <button onClick={() => archive.mutate()} className="text-sm text-rose-600 underline">Archive</button>
+            <button onClick={() => archive.mutate()} className="text-sm text-rose-600 underline">{t("entry.archive")}</button>
           )}
           {isBoard && e.archived && (
-            <button onClick={() => restore.mutate()} className="text-sm text-slate-600 underline">Restore</button>
+            <button onClick={() => restore.mutate()} className="text-sm text-slate-600 underline">{t("entry.restore")}</button>
           )}
         </div>
       </div>
 
       <section className="bg-white border border-slate-200 rounded-xl p-4">
         <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">
-          Original · {e.originalLanguage}
+          {t("entry.original")} · {langName(e.originalLanguage)}
         </div>
         {editing ? (
           <div className="space-y-2">
             <textarea rows={5} value={draft} onChange={(ev) => setDraft(ev.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
             <div className="flex gap-2">
-              <button onClick={() => save.mutate()} disabled={save.isPending} className="bg-slate-900 text-white rounded-lg px-4 py-1.5 text-sm">Save</button>
-              <button onClick={() => setEditing(false)} className="text-sm text-slate-500">Cancel</button>
+              <button onClick={() => save.mutate()} disabled={save.isPending} className="bg-slate-900 text-white rounded-lg px-4 py-1.5 text-sm">{t("entry.save")}</button>
+              <button onClick={() => setEditing(false)} className="text-sm text-slate-500">{t("entry.cancel")}</button>
             </div>
           </div>
         ) : (
@@ -119,16 +123,16 @@ export default function EntryDetailPage() {
       {e.translations.map((translation) => (
         <section key={translation.targetLanguage} className="bg-slate-50 border border-slate-200 rounded-xl p-4">
           <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">
-            Translation · {translation.targetLanguage}
-            {translation.targetLanguage === e.sharedLanguage && " (building shared)"}
+            {t("entry.translation")} · {langName(translation.targetLanguage)}
+            {translation.targetLanguage === e.sharedLanguage && ` (${t("entry.buildingShared")})`}
           </div>
           {translation.status === "completed" ? (
             <>
               <p className="text-slate-700 whitespace-pre-wrap">{translation.translatedText}</p>
-              <p className="text-xs text-slate-400 italic mt-2">AI-generated translation from {e.originalLanguage}.</p>
+              <p className="text-xs text-slate-400 italic mt-2">{t("entry.aiNotice", { lang: langName(e.originalLanguage) })}</p>
             </>
           ) : (
-            <p className="text-sm text-slate-400 italic">Translation {translation.status}, retrying…</p>
+            <p className="text-sm text-slate-400 italic">{t("entry.translationPending")}</p>
           )}
         </section>
       ))}
@@ -139,21 +143,21 @@ export default function EntryDetailPage() {
           disabled={translate.isPending}
           className="text-sm text-slate-600 underline hover:text-slate-900 disabled:opacity-50"
         >
-          Translate to my language ({viewerLang})
+          {t("entry.translateToMy", { lang: langName(viewerLang) })}
         </button>
       )}
 
       {e.attachmentIds.length > 0 && (
         <section>
           <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">
-            Attachment{e.attachmentIds.length > 1 ? "s" : ""}
+            {e.attachmentIds.length > 1 ? t("entry.attachments") : t("entry.attachment")}
           </div>
           <div className="flex flex-wrap gap-3">
             {e.attachmentIds.map((aid) => (
               <img
                 key={aid}
                 src={`/api/v1/entries/${e.id}/attachments/${aid}`}
-                alt="attachment"
+                alt=""
                 className="max-h-80 rounded-lg border border-slate-200"
               />
             ))}
@@ -163,7 +167,7 @@ export default function EntryDetailPage() {
 
       {e.revisions.length > 0 && (
         <section className="bg-white border border-slate-200 rounded-xl p-4">
-          <h2 className="text-sm font-semibold text-slate-700 mb-2">Edit history</h2>
+          <h2 className="text-sm font-semibold text-slate-700 mb-2">{t("entry.editHistory")}</h2>
           <ul className="space-y-2">
             {e.revisions.map((r) => (
               <li key={r.id} className="text-sm text-slate-500">

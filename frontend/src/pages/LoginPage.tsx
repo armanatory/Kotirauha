@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthContext";
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const { requestMagicLink } = useAuth();
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -18,7 +20,7 @@ export default function LoginPage() {
       setDevLink(devLink ?? null);
       setSent(true);
     } catch {
-      toast.error("Could not send the link. Check the email and try again.");
+      toast.error(t("auth.couldNotSend"));
     } finally {
       setSubmitting(false);
     }
@@ -27,21 +29,15 @@ export default function LoginPage() {
   if (sent) {
     return (
       <div className="text-center">
-        <h2 className="text-lg font-semibold text-slate-800">Check your email</h2>
-        <p className="text-sm text-slate-500 mt-2">
-          We sent a login link to <span className="font-medium">{email}</span>. Open it on
-          this device to sign in. The link works once and expires in 20 minutes.
-        </p>
+        <h2 className="text-lg font-semibold text-slate-800">{t("auth.checkEmail")}</h2>
+        <p className="text-sm text-slate-500 mt-2">{t("auth.checkEmailLogin", { email })}</p>
         {devLink && (
-          <a
-            href={devLink}
-            className="inline-block mt-4 bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-medium"
-          >
-            Open login link (dev)
+          <a href={devLink} className="inline-block mt-4 bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-medium">
+            {t("auth.openLinkDev")}
           </a>
         )}
         <button onClick={() => setSent(false)} className="block mx-auto mt-4 text-sm text-slate-500 underline">
-          Use a different email
+          {t("auth.useDifferentEmail")}
         </button>
       </div>
     );
@@ -49,10 +45,10 @@ export default function LoginPage() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold text-slate-800">Log in</h2>
-      <p className="text-sm text-slate-500">Enter your email and we will send you a login link.</p>
+      <h2 className="text-lg font-semibold text-slate-800">{t("auth.login")}</h2>
+      <p className="text-sm text-slate-500">{t("auth.loginIntro")}</p>
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-slate-600">Email</span>
+        <span className="text-slate-600">{t("auth.email")}</span>
         <input
           type="email"
           required
@@ -66,10 +62,10 @@ export default function LoginPage() {
         disabled={submitting}
         className="bg-slate-900 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
       >
-        {submitting ? "Sending…" : "Send login link"}
+        {submitting ? t("auth.sending") : t("auth.sendLink")}
       </button>
       <p className="text-sm text-slate-500 text-center">
-        New here? <Link to="/register" className="text-slate-700 underline">Create an account</Link>
+        {t("auth.newHere")} <Link to="/register" className="text-slate-700 underline">{t("auth.register")}</Link>
       </p>
     </form>
   );

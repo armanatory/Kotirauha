@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
 import { useAuth } from "@/auth/AuthContext";
-import { CATEGORY_LABELS, type Category } from "@/api/types";
+import { type Category } from "@/api/types";
 
 interface Insights {
   totalEntries: number;
@@ -18,6 +19,7 @@ interface Insights {
 }
 
 export default function InsightsPage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isBoard = user?.membership?.role === "board" || user?.membership?.role === "admin";
 
@@ -27,9 +29,9 @@ export default function InsightsPage() {
     enabled: isBoard,
   });
 
-  if (!isBoard) return <p className="text-slate-500">Board access required.</p>;
-  if (q.isLoading) return <p className="text-slate-500">Loading…</p>;
-  if (!q.data) return <p className="text-slate-500">No data.</p>;
+  if (!isBoard) return <p className="text-slate-500">{t("insights.boardRequired")}</p>;
+  if (q.isLoading) return <p className="text-slate-500">{t("common.loading")}</p>;
+  if (!q.data) return <p className="text-slate-500">{t("insights.noData")}</p>;
   const d = q.data;
   const maxCat = Math.max(1, ...d.byCategory.map((c) => c.count));
   const maxMonth = Math.max(1, ...d.byMonth.map((c) => c.count));
@@ -37,24 +39,21 @@ export default function InsightsPage() {
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-slate-800">Insights</h1>
-        <p className="text-sm text-slate-500">
-          Frequency and distribution of reported observations. This is a factual
-          overview, not a judgment of any resident.
-        </p>
+        <h1 className="text-xl font-semibold text-slate-800">{t("insights.title")}</h1>
+        <p className="text-sm text-slate-500">{t("insights.intro")}</p>
       </div>
 
       <section className="bg-white border border-slate-200 rounded-xl p-4">
         <p className="text-3xl font-semibold text-slate-800">{d.totalEntries}</p>
-        <p className="text-sm text-slate-500">total entries</p>
+        <p className="text-sm text-slate-500">{t("insights.totalEntries")}</p>
       </section>
 
       <section className="bg-white border border-slate-200 rounded-xl p-4">
-        <h2 className="text-sm font-semibold text-slate-700 mb-3">By category</h2>
+        <h2 className="text-sm font-semibold text-slate-700 mb-3">{t("insights.byCategory")}</h2>
         <div className="space-y-2">
           {d.byCategory.map((c) => (
             <div key={c.category} className="flex items-center gap-2 text-sm">
-              <span className="w-40 text-slate-600">{CATEGORY_LABELS[c.category]}</span>
+              <span className="w-40 text-slate-600">{t(`categories.full.${c.category}`)}</span>
               <div className="flex-1 bg-slate-100 rounded h-4">
                 <div className="bg-slate-700 h-4 rounded" style={{ width: `${(c.count / maxCat) * 100}%` }} />
               </div>
@@ -65,7 +64,7 @@ export default function InsightsPage() {
       </section>
 
       <section className="bg-white border border-slate-200 rounded-xl p-4">
-        <h2 className="text-sm font-semibold text-slate-700 mb-3">By month</h2>
+        <h2 className="text-sm font-semibold text-slate-700 mb-3">{t("insights.byMonth")}</h2>
         <div className="flex items-end gap-2 h-28">
           {d.byMonth.map((m) => (
             <div key={m.month} className="flex flex-col items-center gap-1 flex-1">
@@ -73,29 +72,29 @@ export default function InsightsPage() {
               <span className="text-[10px] text-slate-400">{m.month}</span>
             </div>
           ))}
-          {d.byMonth.length === 0 && <p className="text-sm text-slate-400">No data.</p>}
+          {d.byMonth.length === 0 && <p className="text-sm text-slate-400">{t("insights.noData")}</p>}
         </div>
       </section>
 
       <section className="bg-white border border-slate-200 rounded-xl p-4">
-        <h2 className="text-sm font-semibold text-slate-700 mb-3">Recurring patterns</h2>
+        <h2 className="text-sm font-semibold text-slate-700 mb-3">{t("insights.recurring")}</h2>
         {d.topRecurring.length === 0 ? (
-          <p className="text-sm text-slate-400">No recurring patterns (no apartment with 2+ entries of the same category).</p>
+          <p className="text-sm text-slate-400">{t("insights.noRecurring")}</p>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-slate-400 text-xs">
-                <th className="py-1">Category</th>
-                <th>Where</th>
-                <th>Count</th>
-                <th>First</th>
-                <th>Last</th>
+                <th className="py-1">{t("insights.colCategory")}</th>
+                <th>{t("insights.colWhere")}</th>
+                <th>{t("insights.colCount")}</th>
+                <th>{t("insights.colFirst")}</th>
+                <th>{t("insights.colLast")}</th>
               </tr>
             </thead>
             <tbody>
               {d.topRecurring.map((p, i) => (
                 <tr key={i} className="border-t border-slate-100">
-                  <td className="py-1.5 text-slate-700">{CATEGORY_LABELS[p.category]}</td>
+                  <td className="py-1.5 text-slate-700">{t(`categories.full.${p.category}`)}</td>
                   <td className="text-slate-700">{p.subjectApartment}</td>
                   <td className="text-slate-700 font-medium">{p.count}</td>
                   <td className="text-slate-500">{new Date(p.firstAt).toLocaleDateString()}</td>

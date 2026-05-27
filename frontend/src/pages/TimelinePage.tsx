@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { api } from "@/lib/api";
 import { useAuth } from "@/auth/AuthContext";
-import { CATEGORIES, CATEGORY_LABELS, type Category, type EntryListItem } from "@/api/types";
+import { CATEGORIES, type Category, type EntryListItem } from "@/api/types";
 
 export default function TimelinePage() {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const isBoard = user?.membership?.role === "board" || user?.membership?.role === "admin";
   const [category, setCategory] = useState<Category | "">("");
@@ -34,44 +36,44 @@ export default function TimelinePage() {
   return (
     <div className="max-w-3xl">
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-semibold text-slate-800">Timeline</h1>
+        <h1 className="text-xl font-semibold text-slate-800">{t("timeline.title")}</h1>
         <Link to="/entries/new" className="bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-slate-700">
-          New entry
+          {t("nav.newEntry")}
         </Link>
       </div>
 
       <div className="bg-white border border-slate-200 rounded-xl p-3 mb-4 flex flex-wrap gap-2 items-end">
         <label className="flex flex-col text-xs text-slate-500">
-          Category
+          {t("timeline.category")}
           <select value={category} onChange={(e) => setCategory(e.target.value as Category | "")} className="border border-slate-300 rounded-lg px-2 py-1.5 text-sm">
-            <option value="">All</option>
+            <option value="">{t("timeline.all")}</option>
             {CATEGORIES.map((c) => (
-              <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>
+              <option key={c} value={c}>{t(`categories.full.${c}`)}</option>
             ))}
           </select>
         </label>
         <label className="flex flex-col text-xs text-slate-500">
-          From
+          {t("timeline.from")}
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="border border-slate-300 rounded-lg px-2 py-1.5 text-sm" />
         </label>
         <label className="flex flex-col text-xs text-slate-500">
-          To
+          {t("timeline.to")}
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="border border-slate-300 rounded-lg px-2 py-1.5 text-sm" />
         </label>
         <label className="flex flex-col text-xs text-slate-500 flex-1 min-w-40">
-          Search
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="keyword" className="border border-slate-300 rounded-lg px-2 py-1.5 text-sm" />
+          {t("timeline.search")}
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("timeline.keyword")} className="border border-slate-300 rounded-lg px-2 py-1.5 text-sm" />
         </label>
         {isBoard && (
           <label className="flex items-center gap-1.5 text-xs text-slate-500 pb-1.5">
             <input type="checkbox" checked={includeArchived} onChange={(e) => setIncludeArchived(e.target.checked)} />
-            Include archived
+            {t("timeline.includeArchived")}
           </label>
         )}
       </div>
 
       {entriesQ.isLoading ? (
-        <p className="text-slate-500">Loading…</p>
+        <p className="text-slate-500">{t("common.loading")}</p>
       ) : entriesQ.data && entriesQ.data.length > 0 ? (
         <ul className="space-y-2">
           {entriesQ.data.map((e) => (
@@ -81,12 +83,12 @@ export default function TimelinePage() {
                 className={`block bg-white border rounded-xl p-3 hover:border-slate-400 ${e.archived ? "border-dashed border-slate-300 opacity-70" : "border-slate-200"}`}
               >
                 <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
-                  <span className="font-semibold text-slate-700">{CATEGORY_LABELS[e.category]}</span>
+                  <span className="font-semibold text-slate-700">{t(`categories.full.${e.category}`)}</span>
                   <span>· {new Date(e.occurredAt).toLocaleString()}</span>
                   {e.subjectApartment && <span>· 📍 {e.subjectApartment}</span>}
                   {e.hasAttachment && <span>· 📎</span>}
-                  {e.edited && <span className="text-amber-600">· edited</span>}
-                  {e.archived && <span className="text-rose-600">· archived</span>}
+                  {e.edited && <span className="text-amber-600">· {t("common.edited")}</span>}
+                  {e.archived && <span className="text-rose-600">· {t("common.archived")}</span>}
                 </div>
                 <p className="text-sm text-slate-700">{e.snippet}</p>
                 <p className="text-xs text-slate-400 mt-1">{e.reporterName}</p>
@@ -96,8 +98,8 @@ export default function TimelinePage() {
         </ul>
       ) : (
         <div className="text-center text-slate-500 py-16">
-          <p>Nothing reported yet.</p>
-          <Link to="/entries/new" className="text-slate-700 underline text-sm">Report something</Link>
+          <p>{t("timeline.empty")}</p>
+          <Link to="/entries/new" className="text-slate-700 underline text-sm">{t("timeline.reportFirst")}</Link>
         </div>
       )}
     </div>

@@ -1,16 +1,13 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuth } from "@/auth/AuthContext";
 import type { BuildingDto, MemberDto } from "@/api/types";
 
-const LANGS = [
-  { code: "fi", label: "Finnish" },
-  { code: "en", label: "English" },
-];
-
 export default function BuildingPage() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const { refresh } = useAuth();
 
@@ -22,7 +19,7 @@ export default function BuildingPage() {
     },
   });
 
-  if (buildingQ.isLoading) return <p className="text-slate-500">Loading…</p>;
+  if (buildingQ.isLoading) return <p className="text-slate-500">{t("common.loading")}</p>;
 
   const onChanged = () => {
     void qc.invalidateQueries({ queryKey: ["building"] });
@@ -37,6 +34,7 @@ export default function BuildingPage() {
 }
 
 function BuildingHome({ building, onChanged }: { building: BuildingDto; onChanged: () => void }) {
+  const { t } = useTranslation();
   const isBoard = building.role === "board" || building.role === "admin";
 
   const membersQ = useQuery({
@@ -48,7 +46,7 @@ function BuildingHome({ building, onChanged }: { building: BuildingDto; onChange
   const regen = useMutation({
     mutationFn: async () => (await api.post<{ joinCode: string }>("/buildings/join-code")).data,
     onSuccess: () => {
-      toast.success("Join code regenerated.");
+      toast.success(t("building.toastCodeRegenerated"));
       onChanged();
     },
   });
@@ -59,14 +57,15 @@ function BuildingHome({ building, onChanged }: { building: BuildingDto; onChange
         <h1 className="text-xl font-semibold text-slate-800">{building.name}</h1>
         {building.address && <p className="text-slate-500 text-sm">{building.address}</p>}
         <p className="text-sm text-slate-500 mt-1">
-          Shared language: <span className="font-medium text-slate-700">{building.sharedLanguage}</span> · Your role:{" "}
-          <span className="font-medium text-slate-700">{building.role}</span>
+          {t("building.sharedLanguage")}:{" "}
+          <span className="font-medium text-slate-700">{t(`languages.${building.sharedLanguage}`, building.sharedLanguage)}</span> ·{" "}
+          {t("building.yourRole")}: <span className="font-medium text-slate-700">{t(`roles.${building.role}`)}</span>
         </p>
       </div>
 
       {isBoard && (
         <section className="bg-white border border-slate-200 rounded-xl p-4">
-          <h2 className="text-sm font-semibold text-slate-700 mb-2">Join code</h2>
+          <h2 className="text-sm font-semibold text-slate-700 mb-2">{t("building.joinCode")}</h2>
           <div className="flex items-center gap-3">
             <code className="px-3 py-1.5 bg-slate-100 rounded-lg text-lg tracking-widest">{building.joinCode}</code>
             <button
@@ -74,23 +73,23 @@ function BuildingHome({ building, onChanged }: { building: BuildingDto; onChange
               disabled={regen.isPending}
               className="text-sm text-slate-600 underline hover:text-slate-900"
             >
-              Regenerate
+              {t("building.regenerate")}
             </button>
           </div>
-          <p className="text-xs text-slate-400 mt-2">Share this code with residents so they can join.</p>
+          <p className="text-xs text-slate-400 mt-2">{t("building.shareCode")}</p>
         </section>
       )}
 
       {isBoard && (
         <section className="bg-white border border-slate-200 rounded-xl p-4">
-          <h2 className="text-sm font-semibold text-slate-700 mb-2">Members</h2>
+          <h2 className="text-sm font-semibold text-slate-700 mb-2">{t("building.members")}</h2>
           <ul className="divide-y divide-slate-100">
             {membersQ.data?.map((m) => (
               <li key={m.userId} className="py-2 flex justify-between text-sm">
                 <span className="text-slate-700">{m.displayName}</span>
                 <span className="text-slate-400">
-                  {m.apartmentNumber ? `Apt ${m.apartmentNumber} · ` : ""}
-                  {m.role}
+                  {m.apartmentNumber ? `${t("building.aptShort", { num: m.apartmentNumber })} · ` : ""}
+                  {t(`roles.${m.role}`, m.role)}
                 </span>
               </li>
             ))}
@@ -102,6 +101,7 @@ function BuildingHome({ building, onChanged }: { building: BuildingDto; onChange
 }
 
 function CreateOrJoin({ onDone }: { onDone: () => void }) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<"create" | "join">("create");
   const [name, setName] = useState("");
   const [lang, setLang] = useState("fi");
@@ -112,39 +112,39 @@ function CreateOrJoin({ onDone }: { onDone: () => void }) {
     mutationFn: async (input: { name: string; sharedLanguage: string; apartmentNumber: string }) =>
       (await api.post("/buildings", input)).data,
     onSuccess: () => {
-      toast.success("Building created.");
+      toast.success(t("building.toastCreated"));
       onDone();
     },
-    onError: () => toast.error("Could not create building."),
+    onError: () => toast.error(t("building.toastCouldNotCreate")),
   });
 
   const join = useMutation({
     mutationFn: async (input: { joinCode: string; apartmentNumber: string }) =>
       (await api.post("/buildings/join", input)).data,
     onSuccess: () => {
-      toast.success("Joined building.");
+      toast.success(t("building.toastJoined"));
       onDone();
     },
-    onError: () => toast.error("Invalid join code."),
+    onError: () => toast.error(t("building.toastInvalidCode")),
   });
 
   return (
     <div className="max-w-md mx-auto">
-      <h1 className="text-xl font-semibold text-slate-800 mb-1">Set up your building</h1>
-      <p className="text-sm text-slate-500 mb-4">Create a new building or join an existing one with a code.</p>
+      <h1 className="text-xl font-semibold text-slate-800 mb-1">{t("building.setupTitle")}</h1>
+      <p className="text-sm text-slate-500 mb-4">{t("building.setupIntro")}</p>
 
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => setTab("create")}
           className={`px-3 py-1.5 rounded-lg text-sm ${tab === "create" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}
         >
-          Create
+          {t("building.create")}
         </button>
         <button
           onClick={() => setTab("join")}
           className={`px-3 py-1.5 rounded-lg text-sm ${tab === "join" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}
         >
-          Join
+          {t("building.join")}
         </button>
       </div>
 
@@ -156,17 +156,16 @@ function CreateOrJoin({ onDone }: { onDone: () => void }) {
           }}
           className="flex flex-col gap-3"
         >
-          <Field label="Building name" value={name} onChange={setName} required />
+          <Field label={t("building.buildingName")} value={name} onChange={setName} required />
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-slate-600">Shared language</span>
+            <span className="text-slate-600">{t("building.sharedLanguage")}</span>
             <select value={lang} onChange={(e) => setLang(e.target.value)} className="border border-slate-300 rounded-lg px-3 py-2">
-              {LANGS.map((l) => (
-                <option key={l.code} value={l.code}>{l.label}</option>
-              ))}
+              <option value="fi">{t("languages.fi")}</option>
+              <option value="en">{t("languages.en")}</option>
             </select>
           </label>
-          <Field label="Your apartment" value={apt} onChange={setApt} />
-          <Submit pending={create.isPending}>Create building</Submit>
+          <Field label={t("building.yourApartment")} value={apt} onChange={setApt} />
+          <Submit pending={create.isPending}>{t("building.createBuilding")}</Submit>
         </form>
       ) : (
         <form
@@ -176,9 +175,9 @@ function CreateOrJoin({ onDone }: { onDone: () => void }) {
           }}
           className="flex flex-col gap-3"
         >
-          <Field label="Join code" value={code} onChange={setCode} required />
-          <Field label="Your apartment" value={apt} onChange={setApt} />
-          <Submit pending={join.isPending}>Join building</Submit>
+          <Field label={t("building.joinCodeField")} value={code} onChange={setCode} required />
+          <Field label={t("building.yourApartment")} value={apt} onChange={setApt} />
+          <Submit pending={join.isPending}>{t("building.joinBuilding")}</Submit>
         </form>
       )}
     </div>

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { api, getToken, setToken } from "@/lib/api";
+import i18n from "@/i18n";
 
 export interface Membership {
   buildingId: string;
@@ -49,6 +50,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { data } = await api.get<CurrentUser>("/auth/me");
       setUser(data);
+      // Follow the user's preferred language unless they picked one manually.
+      if (!localStorage.getItem("lang") && data.preferredLanguage) {
+        void i18n.changeLanguage(data.preferredLanguage === "en" ? "en" : "fi");
+      }
     } catch {
       setUser(null);
     } finally {

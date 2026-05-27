@@ -6,7 +6,7 @@ import { useAuth } from "@/auth/AuthContext";
 import { LANGUAGES } from "@/api/types";
 
 export default function RegisterPage() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { requestMagicLink } = useAuth();
   const [email, setEmail] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -23,7 +23,7 @@ export default function RegisterPage() {
       setDevLink(devLink ?? null);
       setSent(true);
     } catch {
-      toast.error("Could not send the link. Please try again.");
+      toast.error(t("auth.couldNotSend"));
     } finally {
       setSubmitting(false);
     }
@@ -32,14 +32,11 @@ export default function RegisterPage() {
   if (sent) {
     return (
       <div className="text-center">
-        <h2 className="text-lg font-semibold text-slate-800">Check your email</h2>
-        <p className="text-sm text-slate-500 mt-2">
-          We sent a login link to <span className="font-medium">{email}</span>. Open it on this
-          device to finish signing up.
-        </p>
+        <h2 className="text-lg font-semibold text-slate-800">{t("auth.checkEmail")}</h2>
+        <p className="text-sm text-slate-500 mt-2">{t("auth.checkEmailRegister", { email })}</p>
         {devLink && (
           <a href={devLink} className="inline-block mt-4 bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-medium">
-            Open login link (dev)
+            {t("auth.openLinkDev")}
           </a>
         )}
       </div>
@@ -48,10 +45,10 @@ export default function RegisterPage() {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold text-slate-800">Create account</h2>
-      <p className="text-sm text-slate-500">No password needed. We will email you a login link.</p>
+      <h2 className="text-lg font-semibold text-slate-800">{t("auth.register")}</h2>
+      <p className="text-sm text-slate-500">{t("auth.registerIntro")}</p>
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-slate-600">Your name</span>
+        <span className="text-slate-600">{t("auth.name")}</span>
         <input
           required
           value={displayName}
@@ -60,7 +57,7 @@ export default function RegisterPage() {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-slate-600">Email</span>
+        <span className="text-slate-600">{t("auth.email")}</span>
         <input
           type="email"
           required
@@ -70,7 +67,7 @@ export default function RegisterPage() {
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
-        <span className="text-slate-600">Your language</span>
+        <span className="text-slate-600">{t("auth.language")}</span>
         <select
           value={language}
           onChange={(e) => setLanguage(e.target.value)}
@@ -86,10 +83,10 @@ export default function RegisterPage() {
         disabled={submitting}
         className="bg-slate-900 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
       >
-        {submitting ? "Sending…" : "Send login link"}
+        {submitting ? t("auth.sending") : t("auth.sendLink")}
       </button>
       <p className="text-sm text-slate-500 text-center">
-        Already have an account? <Link to="/login" className="text-slate-700 underline">Log in</Link>
+        {t("auth.alreadyHave")} <Link to="/login" className="text-slate-700 underline">{t("auth.login")}</Link>
       </p>
     </form>
   );

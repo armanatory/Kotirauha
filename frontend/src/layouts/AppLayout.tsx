@@ -92,7 +92,7 @@ export default function AppLayout() {
                   onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
                 >
-                  <User size={16} /> Profile
+                  <User size={16} /> {t("account.profile")}
                 </Link>
                 {isAdmin && (
                   <Link
@@ -100,14 +100,14 @@ export default function AppLayout() {
                     onClick={() => setMenuOpen(false)}
                     className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
                   >
-                    <Shield size={16} /> Admin
+                    <Shield size={16} /> {t("nav.admin")}
                   </Link>
                 )}
                 <button
                   onClick={handleLogout}
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
                 >
-                  <LogOut size={16} /> Log out
+                  <LogOut size={16} /> {t("account.logout")}
                 </button>
               </div>
             )}
