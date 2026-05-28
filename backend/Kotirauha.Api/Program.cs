@@ -12,6 +12,7 @@ DotNetEnv.Env.TraversePath().Load();
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddKotirauhaInfrastructure();
+builder.Services.AddMemoryCache();
 
 var corsOrigins = (Environment.GetEnvironmentVariable("CORS_ORIGINS")
         ?? "http://localhost:5173")

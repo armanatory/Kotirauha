@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuth } from "@/auth/AuthContext";
@@ -30,6 +31,19 @@ export default function NewEntryPage() {
   const [occurredAt, setOccurredAt] = useState(localNow());
   const [images, setImages] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  const [refreshNonce, setRefreshNonce] = useState(0);
+  const suggestionsQ = useQuery({
+    queryKey: ["entry-suggestions", refreshNonce],
+    queryFn: async () =>
+      (
+        await api.get<{ suggestions: string[] }>("/entries/suggestions", {
+          params: refreshNonce > 0 ? { refresh: true } : undefined,
+        })
+      ).data.suggestions,
+    enabled: !!user?.membership,
+    staleTime: 30 * 60 * 1000,
+  });
 
   useEffect(() => {
     textRef.current?.focus();
@@ -111,6 +125,38 @@ export default function NewEntryPage() {
           ))}
         </select>
       </div>
+
+      {!text.trim() && (suggestionsQ.data?.length ?? 0) > 0 && (
+        <div className="mt-4 rounded-2xl border border-teal-100 bg-teal-50/60 p-3">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-teal-800">{t("capture.suggestionsTitle")}</p>
+            <button
+              type="button"
+              onClick={() => setRefreshNonce((n) => n + 1)}
+              disabled={suggestionsQ.isFetching}
+              className="text-xs text-teal-700 underline disabled:opacity-50"
+            >
+              {t("capture.suggestionsRefresh")}
+            </button>
+          </div>
+          <p className="text-xs text-slate-500 mt-0.5 mb-2">{t("capture.suggestionsHint")}</p>
+          <div className="flex flex-wrap gap-2">
+            {suggestionsQ.data!.map((s, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => {
+                  setText(s);
+                  textRef.current?.focus();
+                }}
+                className="text-left rounded-full border border-teal-200 bg-white px-3 py-1.5 text-sm text-slate-700 hover:border-teal-400"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <p className="text-sm text-slate-600 mt-5 mb-2">{t("capture.whatAbout")}</p>
       <div className="grid grid-cols-3 gap-2">

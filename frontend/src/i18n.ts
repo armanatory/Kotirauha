@@ -136,6 +136,9 @@ const en = {
       intro:
         "Just describe it in your own words. We keep your original and add a translation for the building automatically.",
       placeholder: "e.g. Strong burning smell in the stairwell tonight",
+      suggestionsTitle: "Need a starting point?",
+      suggestionsHint: "Tap one to fill the box, then edit freely.",
+      suggestionsRefresh: "More ideas",
       writingIn: "Writing in",
       whatAbout: "What is it about?",
       whereIs: "Where is it?",
@@ -493,6 +496,9 @@ const fi = {
       intro:
         "Kuvaile asia omin sanoin. Säilytämme alkuperäisen tekstisi ja lisäämme käännöksen taloyhtiölle automaattisesti.",
       placeholder: "esim. Voimakas palaneen haju rappukäytävässä tänä iltana",
+      suggestionsTitle: "Tarvitsetko aloituskohdan?",
+      suggestionsHint: "Napauta ehdotusta täyttääksesi kentän, muokkaa sitten vapaasti.",
+      suggestionsRefresh: "Lisää ehdotuksia",
       writingIn: "Kirjoitan kielellä",
       whatAbout: "Mistä on kyse?",
       whereIs: "Missä se on?",

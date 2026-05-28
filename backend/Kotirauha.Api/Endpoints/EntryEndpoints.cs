@@ -4,6 +4,7 @@ using Kotirauha.Core.Domain;
 using Kotirauha.Infrastructure;
 using Kotirauha.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Kotirauha.Api.Endpoints;
 
@@ -72,6 +73,42 @@ public static class EntryEndpoints
 
             return Results.Created($"/api/v1/entries/{entry.Id}", new { id = entry.Id });
         }).DisableAntiforgery();
+
+        // --- AI "start writing" suggestions for the capture box ---
+        // Returns short, tappable starters in the building's shared language,
+        // loosely informed by recent notes. Cached per building to limit cost.
+        group.MapGet("/suggestions", async (HttpContext ctx, KotirauhaDbContext db,
+            ISuggestionProvider suggester, IMemoryCache cache, bool? refresh) =>
+        {
+            var userId = ctx.User.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+            var m = await db.GetMembershipAsync(userId.Value);
+            if (m is null) return Results.Ok(new { suggestions = Array.Empty<string>() });
+
+            var lang = m.Building!.SharedLanguage == "en" ? "en" : "fi";
+            var cacheKey = $"suggestions:{m.BuildingId}:{lang}";
+            if (refresh != true && cache.TryGetValue(cacheKey, out IReadOnlyList<string>? cached) && cached is not null)
+                return Results.Ok(new { suggestions = cached });
+
+            var recent = await db.Entries
+                .Where(e => e.BuildingId == m.BuildingId && e.ArchivedAt == null)
+                .Include(e => e.Translations)
+                .OrderByDescending(e => e.OccurredAt)
+                .Take(20)
+                .ToListAsync();
+
+            var examples = recent
+                .Select(e => $"{TimeOfDay(e.OccurredAt, lang)}, {CategoryWord(e.Category, lang)}: {Snippet(SharedText(e, m.Building!.SharedLanguage))}")
+                .ToList();
+
+            IReadOnlyList<string> suggestions;
+            try { suggestions = await suggester.SuggestEntryTextsAsync(lang, examples); }
+            catch { suggestions = Array.Empty<string>(); }
+
+            if (suggestions.Count > 0)
+                cache.Set(cacheKey, suggestions, TimeSpan.FromMinutes(30));
+            return Results.Ok(new { suggestions });
+        });
 
         // --- Timeline list with filters + keyword search ---
         group.MapGet("/", async (HttpContext ctx, KotirauhaDbContext db,
@@ -294,6 +331,43 @@ public static class EntryEndpoints
 
     private static string Snippet(string text) =>
         text.Length <= 160 ? text : text[..160] + "…";
+
+    // Coarse time-of-day in Helsinki time, so suggestions can echo when things
+    // tend to happen without leaking exact timestamps to the model.
+    private static readonly TimeZoneInfo Helsinki = ResolveHelsinki();
+    private static TimeZoneInfo ResolveHelsinki()
+    {
+        foreach (var id in new[] { "Europe/Helsinki", "FLE Standard Time" })
+        {
+            try { return TimeZoneInfo.FindSystemTimeZoneById(id); } catch { /* try next */ }
+        }
+        return TimeZoneInfo.Utc;
+    }
+
+    private static string TimeOfDay(DateTimeOffset at, string lang)
+    {
+        var h = TimeZoneInfo.ConvertTime(at, Helsinki).Hour;
+        var slot = h < 6 ? 0 : h < 12 ? 1 : h < 18 ? 2 : 3;
+        return lang == "en"
+            ? slot switch { 0 => "night", 1 => "morning", 2 => "daytime", _ => "evening" }
+            : slot switch { 0 => "yö", 1 => "aamu", 2 => "päivä", _ => "ilta" };
+    }
+
+    private static string CategoryWord(IncidentCategory c, string lang) => lang == "en"
+        ? c switch
+        {
+            IncidentCategory.Noise => "noise", IncidentCategory.Smell => "smell",
+            IncidentCategory.SmokingOrIncense => "smoking", IncidentCategory.Parking => "parking",
+            IncidentCategory.SafetyConcern => "safety", IncidentCategory.CommonAreaMisuse => "shared space",
+            _ => "other",
+        }
+        : c switch
+        {
+            IncidentCategory.Noise => "melu", IncidentCategory.Smell => "haju",
+            IncidentCategory.SmokingOrIncense => "tupakointi", IncidentCategory.Parking => "pysäköinti",
+            IncidentCategory.SafetyConcern => "turvallisuus", IncidentCategory.CommonAreaMisuse => "yhteiset tilat",
+            _ => "muu",
+        };
 
     internal static EntryDetailDto ToDetail(IncidentEntry e, string sharedLanguage) => new(
         e.Id,

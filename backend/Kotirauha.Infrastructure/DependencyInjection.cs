@@ -31,6 +31,7 @@ public static class DependencyInjection
         services.AddSingleton<IAttachmentStore>(new LocalAttachmentStore(uploadRoot));
 
         RegisterTranslationProvider(services);
+        RegisterSuggestionProvider(services);
         RegisterEmailSender(services);
 
         services.AddScoped<EntryTranslationService>();
@@ -65,6 +66,21 @@ public static class DependencyInjection
         else
         {
             services.AddSingleton<ITranslationProvider, StubTranslationProvider>();
+        }
+    }
+
+    private static void RegisterSuggestionProvider(IServiceCollection services)
+    {
+        var openAiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        if (!string.IsNullOrWhiteSpace(openAiKey))
+        {
+            var model = Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-4o-mini";
+            services.AddSingleton<ISuggestionProvider>(sp =>
+                new OpenAiSuggestionProvider(sp.GetRequiredService<IHttpClientFactory>().CreateClient(), openAiKey!, model));
+        }
+        else
+        {
+            services.AddSingleton<ISuggestionProvider, StubSuggestionProvider>();
         }
     }
 
