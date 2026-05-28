@@ -1,0 +1,13 @@
+**/node_modules
+**/dist
+**/bin
+**/obj
+**/.vite
+.git
+.github
+docs
+.env
+.env.deploy
+*.md
+.playwright-mcp
+frontend/.playwright-mcp

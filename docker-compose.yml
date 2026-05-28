@@ -1,0 +1,71 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-kotirauha}
+      POSTGRES_USER: ${POSTGRES_USER:-kotirauha}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kotirauha}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kotirauha}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "5432:5432"
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: Host=postgres;Database=${POSTGRES_DB:-kotirauha};Username=${POSTGRES_USER:-kotirauha};Password=${POSTGRES_PASSWORD:-kotirauha}
+      JWT_SECRET: ${JWT_SECRET:-dev-only-insecure-secret-change-me-32chars!!}
+      JWT_ISSUER: ${JWT_ISSUER:-kotirauha}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-kotirauha-users}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      ASPNETCORE_URLS: http://+:8080
+      # Uploaded incident images live on a persistent path (see compose.prod).
+      UPLOAD_ROOT: /var/kotirauha/media
+      # Translation provider: auto-selects OpenAI when OPENAI_API_KEY is set,
+      # else Anthropic, else the offline stub.
+      TRANSLATION_PROVIDER: ${TRANSLATION_PROVIDER:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-}
+      # Mailjet — sends the passwordless magic-link login emails.
+      MAILJET_API_KEY: ${MAILJET_API_KEY:-}
+      MAILJET_API_SECRET: ${MAILJET_API_SECRET:-}
+      MAILJET_FROM_EMAIL: ${MAILJET_FROM_EMAIL:-}
+      MAILJET_FROM_NAME: ${MAILJET_FROM_NAME:-}
+      # Base URL baked into the magic-link emails.
+      APP_BASE_URL: ${APP_BASE_URL:-}
+      # Platform admin(s) — comma-separated emails (the owner is always admin).
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+    volumes:
+      - media:/var/kotirauha/media
+    ports:
+      - "5000:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend.Dockerfile
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  pgdata:
+  media:

@@ -1,0 +1,31 @@
+services:
+  postgres:
+    ports: !reset null
+    restart: unless-stopped
+
+  backend:
+    image: ghcr.io/${IMAGE_OWNER}/kotirauha-backend:${TAG:-latest}
+    build: !reset null
+    restart: unless-stopped
+    environment:
+      UPLOAD_ROOT: /var/kotirauha/media
+      # The SPA and the API are same-origin on the apex, so the browser
+      # never sends a CORS preflight. Kept explicit for any future
+      # non-browser / cross-origin caller.
+      CORS_ORIGINS: "https://kotirauha.xyz"
+      # Magic-link login emails point back here.
+      APP_BASE_URL: "https://kotirauha.xyz"
+    volumes:
+      - /var/kotirauha/media:/var/kotirauha/media
+    # !override replaces the base file's 5000:8080 instead of appending.
+    # Loopback only — host Caddy reaches the API through this port.
+    # Kotirauha's range is 5700–5799 (see Exovento ports registry).
+    ports: !override
+      - "127.0.0.1:${PORT_BACKEND:-5700}:8080"
+
+  frontend:
+    image: ghcr.io/${IMAGE_OWNER}/kotirauha-frontend:${TAG:-latest}
+    build: !reset null
+    restart: unless-stopped
+    ports: !override
+      - "127.0.0.1:${PORT_FRONTEND:-5701}:80"

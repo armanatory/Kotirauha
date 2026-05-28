@@ -1,0 +1,15 @@
+# Kotirauha — host-Caddy snippet. Installed to /etc/caddy/Caddyfile.d/
+# by scripts/hetzner-deploy.sh on every deploy. Host Caddy is provisioned
+# by Exovento; the {$KOTIRAUHA_*} ports come from /etc/exovento/caddy.env.
+#
+# Kotirauha is a single app served on the apex: the SPA on / and the
+# API on /api/*. No app./admin. subdomains.
+
+kotirauha.xyz {
+    handle /api/* {
+        reverse_proxy 127.0.0.1:{$KOTIRAUHA_BACKEND}
+    }
+    reverse_proxy 127.0.0.1:{$KOTIRAUHA_FRONTEND}
+    encode gzip zstd
+    log
+}

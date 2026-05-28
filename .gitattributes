@@ -1,0 +1,8 @@
+# Shell scripts and Docker/Caddy/compose files run on Linux — force LF so a
+# Windows checkout (autocrlf) never ships CRLF that breaks the server.
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.Dockerfile text eol=lf
+*.conf text eol=lf
+Caddyfile.snippet text eol=lf
+docker-compose*.yml text eol=lf
