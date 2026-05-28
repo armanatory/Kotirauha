@@ -51,7 +51,7 @@ export default function ExportPage() {
       } else {
         const a = document.createElement("a");
         a.href = url;
-        a.download = format === "excel" ? "kotirauha-raportti.xls" : "kotirauha-raportti.doc";
+        a.download = format === "excel" ? "kotirauha-raportti.xlsx" : "kotirauha-raportti.docx";
         document.body.appendChild(a);
         a.click();
         a.remove();

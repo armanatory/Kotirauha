@@ -302,9 +302,9 @@ function InviteLinks() {
       {invitesQ.data && invitesQ.data.length > 0 ? (
         <ul className="divide-y divide-slate-100">
           {invitesQ.data.map((inv) => (
-            <li key={inv.id} className="py-2.5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="min-w-0">
+            <li key={inv.id} className="py-3">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <p className="text-sm text-slate-700 font-medium truncate">
                     {inv.title || t("building.inviteUntitled")}
                     {!inv.active && (
@@ -318,15 +318,22 @@ function InviteLinks() {
                     {inv.expiresAt ? ` · ${t("building.inviteUntil", { date: new Date(inv.expiresAt).toLocaleDateString() })}` : ""}
                   </p>
                 </div>
-                <div className="flex gap-2 shrink-0">
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    readOnly
+                    value={inv.url}
+                    onFocus={(e) => e.currentTarget.select()}
+                    className={`flex-1 min-w-0 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-mono bg-white ${inv.active ? "text-slate-600" : "text-slate-400 line-through"}`}
+                  />
                   {inv.active && (
-                    <button onClick={() => copy(inv.url)} className="text-sm text-teal-700 underline">
+                    <button onClick={() => copy(inv.url)}
+                      className="shrink-0 bg-teal-700 text-white rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-teal-800">
                       {t("building.inviteCopy")}
                     </button>
                   )}
                   {!inv.revoked && (
                     <button onClick={() => revoke.mutate(inv.id)} disabled={revoke.isPending}
-                      className="text-sm text-rose-600 underline disabled:opacity-50">
+                      className="shrink-0 text-xs text-rose-600 underline disabled:opacity-50">
                       {t("building.inviteRevoke")}
                     </button>
                   )}

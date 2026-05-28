@@ -200,12 +200,17 @@ export default function NewEntryPage() {
         })}
       </div>
       {location === "apartment" && (
-        <input
-          value={apartment}
-          onChange={(e) => setApartment(e.target.value)}
-          placeholder={t("capture.apartmentPlaceholder")}
-          className="mt-2 w-full border border-slate-300 rounded-xl px-3 py-2 text-sm"
-        />
+        <div className="mt-2 rounded-xl border border-teal-200 bg-teal-50/60 p-3">
+          <label className="block text-sm font-medium text-teal-800 mb-1">{t("capture.apartmentLabel")}</label>
+          <input
+            autoFocus
+            value={apartment}
+            onChange={(e) => setApartment(e.target.value)}
+            placeholder={t("capture.apartmentPlaceholder")}
+            className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm"
+          />
+          <p className="text-xs text-slate-500 mt-1">{t("capture.apartmentHint")}</p>
+        </div>
       )}
 
       <p className="text-sm text-slate-600 mt-5 mb-2">
@@ -249,13 +254,15 @@ export default function NewEntryPage() {
         />
       </label>
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="mt-6 w-full bg-teal-700 text-white rounded-2xl py-3.5 text-base font-semibold shadow-sm hover:bg-teal-800 disabled:opacity-50"
-      >
-        {submitting ? t("capture.saving") : t("capture.save")}
-      </button>
+      <div className="sticky bottom-20 md:bottom-2 z-10 mt-6 -mx-1 px-1 pt-3 pb-1 bg-gradient-to-t from-white via-white/95 to-transparent">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full bg-teal-700 text-white rounded-2xl py-3.5 text-base font-semibold shadow-lg hover:bg-teal-800 disabled:opacity-50"
+        >
+          {submitting ? t("capture.saving") : t("capture.save")}
+        </button>
+      </div>
     </form>
   );
 }
