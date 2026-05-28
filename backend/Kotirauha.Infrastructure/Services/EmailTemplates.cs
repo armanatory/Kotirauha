@@ -60,6 +60,36 @@ public static class EmailTemplates
         return (subject, html, text);
     }
 
+    public static (string Subject, string Html, string Text) RenderJoinRequest(
+        string buildingName, string requester, string link, string lang)
+    {
+        var fi = lang == "fi";
+        var subject = fi ? "Uusi liittymispyyntö taloyhtiöösi" : "New join request for your building";
+        var slogan = fi
+            ? "Rauhallinen ja puolueeton kirjaus taloyhtiön arjesta."
+            : "A calm, neutral record of residential peace.";
+        var heading = fi ? "Uusi liittymispyyntö" : "New join request";
+        var body = fi
+            ? $"{Esc(requester)} haluaa liittyä taloyhtiöön {Esc(buildingName)}. Voit hyväksyä tai hylätä pyynnön sovelluksessa."
+            : $"{Esc(requester)} wants to join {Esc(buildingName)}. You can approve or decline the request in the app.";
+        var button = fi ? "Avaa Kotirauha" : "Open Kotirauha";
+
+        var inner = $@"
+<h1 style=""margin:0 0 12px;font:600 22px/1.3 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#0f172a"">{Esc(heading)}</h1>
+<p style=""margin:0 0 20px;font:14px/1.55 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:#334155"">{body}</p>
+<table role=""presentation"" cellpadding=""0"" cellspacing=""0"" style=""margin:0 0 8px"">
+  <tr><td>
+    <a href=""{Esc(link)}"" style=""display:inline-block;padding:12px 26px;background:{Accent};color:#ffffff;text-decoration:none;border-radius:8px;font:500 14px/1 -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif"">{Esc(button)}</a>
+  </td></tr>
+</table>";
+
+        var html = Wrap(subject, slogan, inner);
+        var text = fi
+            ? $"{heading}\n\n{requester} haluaa liittyä taloyhtiöön {buildingName}.\n\nHyväksy tai hylkää pyyntö: {link}\n\n—\nKotirauha · {ApexUrl}\n"
+            : $"{heading}\n\n{requester} wants to join {buildingName}.\n\nApprove or decline: {link}\n\n—\nKotirauha · {ApexUrl}\n";
+        return (subject, html, text);
+    }
+
     private static string Wrap(string title, string slogan, string inner)
     {
         var sb = new StringBuilder(2048);

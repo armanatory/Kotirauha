@@ -24,3 +24,10 @@ public enum TranslationStatus
     Completed = 1,
     Failed = 2,
 }
+
+public enum JoinRequestStatus
+{
+    Pending = 0,
+    Approved = 1,
+    Rejected = 2,
+}
