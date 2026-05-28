@@ -52,16 +52,14 @@ using (var scope = app.Services.CreateScope())
     var db = scope.ServiceProvider.GetRequiredService<KotirauhaDbContext>();
     db.Database.Migrate();
 
-    // Promote the configured operator to platform admin (idempotent).
-    var adminEmail = Environment.GetEnvironmentVariable("ADMIN_EMAIL")?.Trim().ToLowerInvariant();
-    if (!string.IsNullOrWhiteSpace(adminEmail))
+    // Promote configured operators to platform admin (idempotent).
+    var toPromote = db.Users.Where(u => !u.IsPlatformAdmin).ToList()
+        .Where(u => Kotirauha.Api.Common.AdminConfig.IsAdminEmail(u.Email))
+        .ToList();
+    if (toPromote.Count > 0)
     {
-        var admin = db.Users.FirstOrDefault(u => u.Email == adminEmail);
-        if (admin is not null && !admin.IsPlatformAdmin)
-        {
-            admin.IsPlatformAdmin = true;
-            db.SaveChanges();
-        }
+        foreach (var u in toPromote) u.IsPlatformAdmin = true;
+        db.SaveChanges();
     }
 }
 
@@ -78,6 +76,7 @@ api.MapEntryEndpoints();
 api.MapExportEndpoints();
 api.MapInsightsEndpoints();
 api.MapAdminEndpoints();
+api.MapResourceEndpoints();
 
 app.Run();
 

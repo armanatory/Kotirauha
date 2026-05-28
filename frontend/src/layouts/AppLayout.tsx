@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Home, PlusCircle, Building2, FileText, BarChart3, Shield, User, LogOut } from "lucide-react";
+import { Home, PlusCircle, Building2, BarChart3, BookOpen, Shield, User, LogOut } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { BRAND } from "@/lib/branding";
 
@@ -18,7 +18,7 @@ const navItems: NavItem[] = [
   { to: "/entries/new", key: "nav.newEntry", icon: PlusCircle, accent: true },
   { to: "/insights", key: "nav.insights", icon: BarChart3, boardOnly: true },
   { to: "/building", key: "nav.building", icon: Building2 },
-  { to: "/export", key: "nav.export", icon: FileText },
+  { to: "/good-to-know", key: "nav.resources", icon: BookOpen },
 ];
 
 export default function AppLayout() {

@@ -17,6 +17,7 @@ public class KotirauhaDbContext : DbContext
     public DbSet<IncidentTranslation> Translations => Set<IncidentTranslation>();
     public DbSet<IncidentAttachment> Attachments => Set<IncidentAttachment>();
     public DbSet<IncidentRevision> Revisions => Set<IncidentRevision>();
+    public DbSet<ResourceLink> ResourceLinks => Set<ResourceLink>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -83,6 +84,13 @@ public class KotirauhaDbContext : DbContext
         {
             e.Property(x => x.PreviousText).IsRequired();
             e.HasOne(x => x.Entry).WithMany(en => en.Revisions).HasForeignKey(x => x.EntryId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<ResourceLink>(e =>
+        {
+            e.Property(x => x.Title).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Url).HasMaxLength(2048).IsRequired();
+            e.Property(x => x.Description).HasMaxLength(1000);
         });
     }
 }

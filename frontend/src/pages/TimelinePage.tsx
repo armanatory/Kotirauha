@@ -37,9 +37,14 @@ export default function TimelinePage() {
     <div className="max-w-3xl">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-xl font-semibold text-slate-800">{t("timeline.title")}</h1>
-        <Link to="/entries/new" className="bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-slate-700">
-          {t("nav.newEntry")}
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link to="/export" className="text-sm text-slate-500 underline hover:text-slate-800">
+            {t("nav.export")}
+          </Link>
+          <Link to="/entries/new" className="bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-slate-700">
+            {t("nav.newEntry")}
+          </Link>
+        </div>
       </div>
 
       <div className="bg-white border border-slate-200 rounded-xl p-3 mb-4 flex flex-wrap gap-2 items-end">

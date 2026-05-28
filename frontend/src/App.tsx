@@ -14,6 +14,7 @@ import EntryDetailPage from "@/pages/EntryDetailPage";
 import BuildingPage from "@/pages/BuildingPage";
 import InsightsPage from "@/pages/InsightsPage";
 import AdminPage from "@/pages/AdminPage";
+import ResourcesPage from "@/pages/ResourcesPage";
 import ExportPage from "@/pages/ExportPage";
 import ProfilePage from "@/pages/ProfilePage";
 import NotFoundPage from "@/pages/NotFoundPage";
@@ -49,6 +50,7 @@ export default function App() {
           <Route path="/building" element={<BuildingPage />} />
           <Route path="/insights" element={<InsightsPage />} />
           <Route path="/admin" element={<AdminPage />} />
+          <Route path="/good-to-know" element={<ResourcesPage />} />
           <Route path="/export" element={<ExportPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="*" element={<NotFoundPage />} />

@@ -45,6 +45,9 @@ public static class AuthEndpoints
                 user.PreferredLanguage = lang;
             }
 
+            // Project owner / configured operators are platform admins.
+            if (AdminConfig.IsAdminEmail(address) && !user.IsPlatformAdmin) user.IsPlatformAdmin = true;
+
             var rawToken = Base64Url(RandomNumberGenerator.GetBytes(32));
             db.MagicLinkTokens.Add(new MagicLinkToken
             {
