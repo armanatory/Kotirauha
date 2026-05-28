@@ -5,12 +5,22 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/auth/AuthContext";
 import { CATEGORIES, type Category } from "@/api/types";
 
+function ymd(d: Date) {
+  const z = new Date(d);
+  z.setMinutes(z.getMinutes() - z.getTimezoneOffset());
+  return z.toISOString().slice(0, 10);
+}
+
 export default function ExportPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const isBoard = user?.membership?.role === "board" || user?.membership?.role === "admin";
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
+  const [from, setFrom] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 90);
+    return ymd(d);
+  });
+  const [to, setTo] = useState(() => ymd(new Date()));
   const [categories, setCategories] = useState<Category[]>([]);
   const [subjectApartment, setSubjectApartment] = useState("");
   const [includeArchived, setIncludeArchived] = useState(false);
@@ -20,22 +30,33 @@ export default function ExportPage() {
     setCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
   }
 
-  async function generate() {
+  async function generate(format: "pdf" | "excel" | "word") {
     setBusy(true);
     try {
       const res = await api.post(
         "/export",
         {
           from: from ? new Date(from).toISOString() : null,
-          to: to ? new Date(to).toISOString() : null,
+          to: to ? new Date(`${to}T23:59:59`).toISOString() : null,
           categories: categories.length ? categories : null,
           subjectApartment: subjectApartment || null,
           includeArchived,
+          format,
         },
         { responseType: "blob" },
       );
       const url = URL.createObjectURL(res.data as Blob);
-      window.open(url, "_blank");
+      if (format === "pdf") {
+        window.open(url, "_blank");
+      } else {
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = format === "excel" ? "kotirauha-raportti.xls" : "kotirauha-raportti.doc";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      }
     } catch {
       toast.error(t("exportPage.couldNotGenerate"));
     } finally {
@@ -89,13 +110,23 @@ export default function ExportPage() {
         </label>
       )}
 
-      <button
-        onClick={generate}
-        disabled={busy}
-        className="bg-teal-700 text-white rounded-lg py-2 px-5 text-sm font-medium hover:bg-teal-800 disabled:opacity-50"
-      >
-        {t("exportPage.generate")}
-      </button>
+      <div>
+        <p className="text-sm text-slate-600 mb-1">{t("exportPage.downloadAs")}</p>
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => generate("pdf")} disabled={busy}
+            className="bg-teal-700 text-white rounded-lg py-2 px-5 text-sm font-medium hover:bg-teal-800 disabled:opacity-50">
+            {t("exportPage.pdf")}
+          </button>
+          <button onClick={() => generate("excel")} disabled={busy}
+            className="border border-slate-300 text-slate-700 rounded-lg py-2 px-5 text-sm font-medium hover:bg-slate-100 disabled:opacity-50">
+            {t("exportPage.excel")}
+          </button>
+          <button onClick={() => generate("word")} disabled={busy}
+            className="border border-slate-300 text-slate-700 rounded-lg py-2 px-5 text-sm font-medium hover:bg-slate-100 disabled:opacity-50">
+            {t("exportPage.word")}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -13,6 +13,7 @@ export default function EntryDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
 
@@ -24,6 +25,7 @@ export default function EntryDetailPage() {
   });
 
   const isBoard = user?.membership?.role === "board" || user?.membership?.role === "admin";
+  const isAdmin = user?.isAdmin ?? false;
   const isReporter = entryQ.data?.reporterUserId === user?.id;
 
   const save = useMutation({
@@ -53,6 +55,16 @@ export default function EntryDetailPage() {
       void qc.invalidateQueries({ queryKey: ["entry", id] });
       void qc.invalidateQueries({ queryKey: ["entries"] });
     },
+  });
+
+  const remove = useMutation({
+    mutationFn: async () => (await api.delete(`/entries/${id}`)).data,
+    onSuccess: () => {
+      toast.success(t("entry.removed"));
+      void qc.invalidateQueries({ queryKey: ["entries"] });
+      navigate("/timeline", { replace: true });
+    },
+    onError: () => toast.error(t("entry.couldNotRemove")),
   });
 
   const translate = useMutation({
@@ -91,15 +103,23 @@ export default function EntryDetailPage() {
             {e.archived && <span className="text-xs px-2 py-0.5 rounded bg-rose-100 text-rose-700">{t("common.archived")}</span>}
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-3 justify-end">
           {isReporter && !e.archived && !editing && (
             <button onClick={() => { setEditing(true); setDraft(e.originalText); }} className="text-sm text-slate-600 underline">{t("entry.edit")}</button>
           )}
-          {(isReporter || isBoard) && !e.archived && (
-            <button onClick={() => archive.mutate()} className="text-sm text-rose-600 underline">{t("entry.archive")}</button>
+          {isBoard && !e.archived && (
+            <button onClick={() => archive.mutate()} className="text-sm text-slate-600 underline">{t("entry.hide")}</button>
           )}
           {isBoard && e.archived && (
             <button onClick={() => restore.mutate()} className="text-sm text-slate-600 underline">{t("entry.restore")}</button>
+          )}
+          {(isReporter || isAdmin) && (
+            <button
+              onClick={() => { if (confirm(t("entry.removeConfirm"))) remove.mutate(); }}
+              className="text-sm text-rose-600 underline"
+            >
+              {t("entry.remove")}
+            </button>
           )}
         </div>
       </div>

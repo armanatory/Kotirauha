@@ -178,24 +178,44 @@ public static class EntryEndpoints
             return Results.Ok(new { id = e.Id });
         });
 
+        // Hide (archive) — board only, reversible.
         group.MapPost("/{id:guid}/archive", async (Guid id, HttpContext ctx, KotirauhaDbContext db) =>
         {
             var userId = ctx.User.GetUserId();
             if (userId is null) return Results.Unauthorized();
             var m = await db.GetMembershipAsync(userId.Value);
-            if (m is null) return Results.NotFound();
+            if (m is null || m.Role is MembershipRole.Resident)
+                return Results.Problem("Board access required.", statusCode: 403);
 
             var e = await db.Entries.FirstOrDefaultAsync(x => x.Id == id && x.BuildingId == m.BuildingId);
             if (e is null) return Results.NotFound();
-
-            var isBoard = m.Role is MembershipRole.Board or MembershipRole.Admin;
-            if (e.ReporterUserId != userId && !isBoard)
-                return Results.Problem("Only the reporter or a board member can archive this entry.", statusCode: 403);
 
             e.ArchivedAt = DateTimeOffset.UtcNow;
             e.ArchivedByUserId = userId;
             await db.SaveChangesAsync();
             return Results.Ok(new { id = e.Id });
+        });
+
+        // Remove (permanent delete) — the reporter of the entry, or a platform admin.
+        group.MapDelete("/{id:guid}", async (Guid id, HttpContext ctx, KotirauhaDbContext db, IAttachmentStore store) =>
+        {
+            var userId = ctx.User.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var e = await db.Entries.Include(x => x.Attachments).FirstOrDefaultAsync(x => x.Id == id);
+            if (e is null) return Results.NotFound();
+
+            var isAdmin = await db.Users.AnyAsync(u => u.Id == userId && u.IsPlatformAdmin);
+            if (e.ReporterUserId != userId && !isAdmin)
+                return Results.Problem("Only the reporter or an admin can remove this entry.", statusCode: 403);
+
+            foreach (var a in e.Attachments)
+            {
+                try { await store.DeleteAsync(a.StorageKey); } catch { /* best effort */ }
+            }
+            db.Entries.Remove(e); // cascades translations, attachments, revisions
+            await db.SaveChangesAsync();
+            return Results.Ok(new { deleted = true });
         });
 
         group.MapPost("/{id:guid}/restore", async (Guid id, HttpContext ctx, KotirauhaDbContext db) =>

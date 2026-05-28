@@ -29,6 +29,13 @@ public class LocalAttachmentStore : IAttachmentStore
         return key;
     }
 
+    public Task DeleteAsync(string storageKey, CancellationToken ct = default)
+    {
+        var path = Path.Combine(_root, storageKey);
+        if (File.Exists(path)) File.Delete(path);
+        return Task.CompletedTask;
+    }
+
     public Task<(Stream Content, string ContentType)?> GetAsync(string storageKey, CancellationToken ct = default)
     {
         var path = Path.Combine(_root, storageKey);

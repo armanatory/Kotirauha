@@ -16,4 +16,5 @@ public interface IAttachmentStore
 {
     Task<string> SaveAsync(Stream content, string contentType, CancellationToken ct = default);
     Task<(Stream Content, string ContentType)?> GetAsync(string storageKey, CancellationToken ct = default);
+    Task DeleteAsync(string storageKey, CancellationToken ct = default);
 }
