@@ -110,6 +110,18 @@ public static class EntryEndpoints
             return Results.Ok(new { suggestions });
         });
 
+        // --- AI guess of category + location from the typed text ---
+        group.MapPost("/classify", async (ClassifyRequest req, HttpContext ctx, KotirauhaDbContext db, ISuggestionProvider suggester) =>
+        {
+            var userId = ctx.User.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+            var text = req.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(text) || text.Length < 8)
+                return Results.Ok(new EntryClassification(null, null));
+            try { return Results.Ok(await suggester.ClassifyAsync(text)); }
+            catch { return Results.Ok(new EntryClassification(null, null)); }
+        });
+
         // --- Timeline list with filters + keyword search ---
         group.MapGet("/", async (HttpContext ctx, KotirauhaDbContext db,
             string? category, DateTimeOffset? from, DateTimeOffset? to, string? q, bool? includeArchived) =>
@@ -390,3 +402,4 @@ public static class EntryEndpoints
 
 public record EditEntryRequest(string? OriginalText, DateTimeOffset? OccurredAt, string? Category, string? SubjectApartment);
 public record TranslateRequest(string Language);
+public record ClassifyRequest(string Text);

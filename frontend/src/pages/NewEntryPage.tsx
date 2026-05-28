@@ -31,6 +31,8 @@ export default function NewEntryPage() {
   const [occurredAt, setOccurredAt] = useState(localNow());
   const [images, setImages] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const categoryTouched = useRef(false);
+  const locationTouched = useRef(false);
 
   const [refreshNonce, setRefreshNonce] = useState(0);
   const suggestionsQ = useQuery({
@@ -48,6 +50,30 @@ export default function NewEntryPage() {
   useEffect(() => {
     textRef.current?.focus();
   }, []);
+
+  // Let the AI guess the category and location from what's written, unless the
+  // user has already chosen them by hand. Debounced so we don't call per keystroke.
+  useEffect(() => {
+    if (text.trim().length < 8) return;
+    if (categoryTouched.current && locationTouched.current) return;
+    const handle = setTimeout(async () => {
+      try {
+        const { data } = await api.post<{ category: string | null; location: string | null }>(
+          "/entries/classify",
+          { text },
+        );
+        if (!categoryTouched.current && data.category && (CATEGORIES as readonly string[]).includes(data.category)) {
+          setCategory(data.category as Category);
+        }
+        if (!locationTouched.current && data.location) {
+          setLocation(data.location as LocationKey);
+        }
+      } catch {
+        /* detection is best effort */
+      }
+    }, 800);
+    return () => clearTimeout(handle);
+  }, [text]);
 
   if (!user?.membership) {
     return (
@@ -166,7 +192,7 @@ export default function NewEntryPage() {
             <button
               key={c}
               type="button"
-              onClick={() => setCategory(c)}
+              onClick={() => { categoryTouched.current = true; setCategory(c); }}
               className={`flex flex-col items-center gap-1 rounded-2xl py-3 border text-sm transition ${
                 active ? "bg-teal-700 text-white border-teal-700" : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"
               }`}
@@ -188,7 +214,7 @@ export default function NewEntryPage() {
             <button
               key={l.key}
               type="button"
-              onClick={() => setLocation(active ? null : l.key)}
+              onClick={() => { locationTouched.current = true; setLocation(active ? null : l.key); }}
               className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm transition ${
                 active ? "bg-teal-700 text-white border-teal-700" : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"
               }`}
@@ -203,7 +229,6 @@ export default function NewEntryPage() {
         <div className="mt-2 rounded-xl border border-teal-200 bg-teal-50/60 p-3">
           <label className="block text-sm font-medium text-teal-800 mb-1">{t("capture.apartmentLabel")}</label>
           <input
-            autoFocus
             value={apartment}
             onChange={(e) => setApartment(e.target.value)}
             placeholder={t("capture.apartmentPlaceholder")}

@@ -31,4 +31,30 @@ public class StubSuggestionProvider : ISuggestionProvider
     public Task<IReadOnlyList<string>> SuggestEntryTextsAsync(
         string language, IReadOnlyList<string> recentExamples, CancellationToken ct = default)
         => Task.FromResult<IReadOnlyList<string>>(language == "en" ? En : Fi);
+
+    // Keyword heuristics (EN + FI) used when no AI key is configured.
+    public Task<EntryClassification> ClassifyAsync(string text, CancellationToken ct = default)
+    {
+        var t = (text ?? "").ToLowerInvariant();
+        bool Has(params string[] words) => words.Any(w => t.Contains(w));
+
+        string? category =
+            Has("smell", "haju", "odor", "stink", "lemu") ? "Smell"
+            : Has("smoke", "smoking", "cigarette", "tupak", "savu", "suitsuke", "incense") ? "SmokingOrIncense"
+            : Has("park", "auto", "car", "pysäk", "ajoneuvo") ? "Parking"
+            : Has("noise", "loud", "music", "melu", "ääni", "musiikki", "remont") ? "Noise"
+            : Has("danger", "unsafe", "fire", "threat", "vaara", "turvall", "uhka", "palo") ? "SafetyConcern"
+            : Has("laundry", "trash", "rubbish", "garbage", "elevator", "pyykki", "roska", "jäte", "hissi", "yhteis") ? "CommonAreaMisuse"
+            : null;
+
+        string? location =
+            Has("stair", "rappu", "porras", "portai") ? "stairwell"
+            : Has("corridor", "hallway", "käytävä") ? "corridor"
+            : Has("yard", "parking lot", "piha", "parkki", "pysäköinti") ? "yard"
+            : Has("basement", "cellar", "laundry", "kellari", "pyykki", "varasto") ? "basement"
+            : Has("apartment", "flat", "door", "asunto", "asunnon", "ovi", "naapuri") ? "apartment"
+            : null;
+
+        return Task.FromResult(new EntryClassification(category, location));
+    }
 }

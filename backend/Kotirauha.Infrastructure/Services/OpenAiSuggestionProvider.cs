@@ -62,6 +62,50 @@ public class OpenAiSuggestionProvider : ISuggestionProvider
         return Parse(content);
     }
 
+    private static readonly string[] Categories =
+        ["Noise", "Smell", "SmokingOrIncense", "Parking", "SafetyConcern", "CommonAreaMisuse", "Other"];
+    private static readonly string[] Locations =
+        ["stairwell", "corridor", "yard", "basement", "apartment", "other"];
+
+    private const string ClassifyPrompt =
+        "You read a resident's short note about a building incident (English or Finnish) and label it. " +
+        "Reply ONLY with JSON: {\"category\": <one of " +
+        "Noise, Smell, SmokingOrIncense, Parking, SafetyConcern, CommonAreaMisuse, Other>, " +
+        "\"location\": <one of stairwell, corridor, yard, basement, apartment, other>}. " +
+        "Pick the single best fit. If a field is genuinely unclear, use \"Other\" / \"other\".";
+
+    public async Task<EntryClassification> ClassifyAsync(string text, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return new EntryClassification(null, null);
+
+        var payload = new
+        {
+            model = _model,
+            temperature = 0,
+            response_format = new { type = "json_object" },
+            messages = new object[]
+            {
+                new { role = "system", content = ClassifyPrompt },
+                new { role = "user", content = text },
+            },
+        };
+
+        using var resp = await _http.PostAsJsonAsync("v1/chat/completions", payload, ct);
+        resp.EnsureSuccessStatusCode();
+
+        using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
+        var content = doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString();
+        if (string.IsNullOrWhiteSpace(content)) return new EntryClassification(null, null);
+
+        using var parsed = JsonDocument.Parse(content);
+        var cat = parsed.RootElement.TryGetProperty("category", out var c) ? c.GetString() : null;
+        var loc = parsed.RootElement.TryGetProperty("location", out var l) ? l.GetString() : null;
+
+        cat = Categories.FirstOrDefault(x => string.Equals(x, cat, StringComparison.OrdinalIgnoreCase));
+        loc = Locations.FirstOrDefault(x => string.Equals(x, loc, StringComparison.OrdinalIgnoreCase));
+        return new EntryClassification(cat, loc);
+    }
+
     private static IReadOnlyList<string> Parse(string content) =>
         content.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(line => line.TrimStart('-', '*', '•', ' ').Trim())
