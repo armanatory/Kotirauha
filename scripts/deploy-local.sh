@@ -127,6 +127,29 @@ if [ "${#FORWARDED[@]}" -gt 0 ]; then
 fi
 SSH_ENV="${SSH_ENV_PAIRS[*]:-}"
 
+# First-deploy bootstrap: add-app leaves /srv/kotirauha empty, and the deploy
+# script lives in the repo — so clone/refresh it on the server before invoking
+# it. Idempotent: subsequent deploys just fast-forward. .env is gitignored, so
+# reset --hard never touches the server's secrets.
+echo; echo "▶ Ensuring /srv/kotirauha checkout on $SSH_HOST"
+ssh "${SSH_OPTS[@]}" "$SSH_HOST" \
+  "IMAGE_OWNER='$IMAGE_OWNER' GHCR_USERNAME='$GHCR_USERNAME' GHCR_PAT='${GHCR_PAT:-}' bash -s" <<'REMOTE'
+set -euo pipefail
+cd /srv/kotirauha
+REPO_URL="https://github.com/${IMAGE_OWNER:-armanatory}/Kotirauha.git"
+GITARGS=(-c safe.directory=/srv/kotirauha)
+if [ -n "${GHCR_PAT:-}" ]; then
+  GITARGS+=(-c "url.https://${GHCR_USERNAME:-$IMAGE_OWNER}:${GHCR_PAT}@github.com/.insteadOf=https://github.com/")
+fi
+[ -d .git ] || git init -q
+git remote get-url origin >/dev/null 2>&1 || git remote add origin "$REPO_URL"
+git remote set-url origin "$REPO_URL"
+GIT_TERMINAL_PROMPT=0 git "${GITARGS[@]}" fetch --quiet origin main
+git "${GITARGS[@]}" reset --quiet --hard origin/main
+chmod +x scripts/*.sh 2>/dev/null || true
+echo "  ✓ /srv/kotirauha at $(git "${GITARGS[@]}" rev-parse --short HEAD)"
+REMOTE
+
 echo; echo "▶ Triggering hetzner-deploy.sh on $SSH_HOST"
 ssh "${SSH_OPTS[@]}" "$SSH_HOST" \
   "TAG=$TAG IMAGE_OWNER=$IMAGE_OWNER GHCR_USERNAME=$GHCR_USERNAME GHCR_PAT='${GHCR_PAT:-}' $SSH_ENV \
