@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthContext";
 import MagicLinkSent from "@/auth/MagicLinkSent";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -34,29 +35,46 @@ export default function LoginPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <h2 className="text-lg font-semibold text-slate-800">{t("auth.login")}</h2>
-      <p className="text-sm text-slate-500">{t("auth.loginIntro")}</p>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-slate-600">{t("auth.email")}</span>
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="border border-slate-300 rounded-lg px-3 py-2"
-        />
-      </label>
-      <button
-        type="submit"
-        disabled={submitting}
-        className="bg-teal-700 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal-800 disabled:opacity-50"
-      >
-        {submitting ? t("auth.sending") : t("auth.sendLink")}
-      </button>
+    <div className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <h2 className="text-lg font-semibold text-slate-800">{t("auth.login")}</h2>
+        <p className="text-sm text-slate-500">{t("auth.loginIntro")}</p>
+        <label className="flex flex-col gap-1 text-sm">
+          <span className="text-slate-600">{t("auth.email")}</span>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            className="border border-slate-300 rounded-lg px-3 py-2"
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={submitting}
+          className="bg-teal-700 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal-800 disabled:opacity-50"
+        >
+          {submitting ? t("auth.sending") : t("auth.sendLink")}
+        </button>
+      </form>
+
+      <GoogleDivider />
+      <GoogleSignInButton />
+
       <p className="text-sm text-slate-500 text-center">
         {t("auth.newHere")} <Link to="/register" className="text-slate-700 underline">{t("auth.register")}</Link>
       </p>
-    </form>
+    </div>
+  );
+}
+
+export function GoogleDivider() {
+  const { t } = useTranslation();
+  return (
+    <div className="flex items-center gap-3 text-xs text-slate-400">
+      <span className="h-px flex-1 bg-slate-200" />
+      {t("auth.or")}
+      <span className="h-px flex-1 bg-slate-200" />
+    </div>
   );
 }

@@ -58,6 +58,7 @@ interface AuthState {
   requestMagicLink: (input: MagicLinkInput) => Promise<{ devLink?: string; devCode?: string }>;
   verify: (token: string) => Promise<{ profileComplete: boolean }>;
   verifyCode: (email: string, code: string) => Promise<{ profileComplete: boolean }>;
+  signInWithGoogle: (credential: string) => Promise<{ profileComplete: boolean }>;
   updateProfile: (input: { displayName?: string; preferredLanguage?: string }) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
@@ -114,6 +115,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { profileComplete: data.profileComplete };
   }
 
+  async function signInWithGoogle(credential: string) {
+    const { data } = await api.post<{ token: string; profileComplete: boolean }>("/auth/google", { credential });
+    setToken(data.token);
+    await redeemPendingInvite();
+    await refresh();
+    return { profileComplete: data.profileComplete };
+  }
+
   async function updateProfile(input: { displayName?: string; preferredLanguage?: string }) {
     await api.patch("/auth/me", input);
     await refresh();
@@ -125,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, requestMagicLink, verify, verifyCode, updateProfile, logout, refresh }}>
+    <AuthContext.Provider value={{ user, loading, requestMagicLink, verify, verifyCode, signInWithGoogle, updateProfile, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );

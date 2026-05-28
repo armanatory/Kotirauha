@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthContext";
 import { LANGUAGES } from "@/api/types";
 import MagicLinkSent from "@/auth/MagicLinkSent";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
+import { GoogleDivider } from "@/pages/LoginPage";
 
 export default function RegisterPage() {
   const { t, i18n } = useTranslation();
@@ -37,6 +39,7 @@ export default function RegisterPage() {
   }
 
   return (
+    <div className="flex flex-col gap-4">
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold text-slate-800">{t("auth.register")}</h2>
       <p className="text-sm text-slate-500">{t("auth.registerIntro")}</p>
@@ -78,9 +81,14 @@ export default function RegisterPage() {
       >
         {submitting ? t("auth.sending") : t("auth.sendLink")}
       </button>
+    </form>
+
+      <GoogleDivider />
+      <GoogleSignInButton />
+
       <p className="text-sm text-slate-500 text-center">
         {t("auth.alreadyHave")} <Link to="/login" className="text-slate-700 underline">{t("auth.login")}</Link>
       </p>
-    </form>
+    </div>
   );
 }

@@ -190,7 +190,14 @@ function BuildingHome({ building, onChanged }: { building: BuildingDto; onChange
           <ul className="divide-y divide-slate-100">
             {membersQ.data?.map((m) => (
               <li key={m.userId} className="py-2 flex justify-between text-sm">
-                <span className="text-slate-700">{m.displayName}</span>
+                <span className="text-slate-700">
+                  {m.displayName}
+                  {m.joinedVia && (
+                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
+                      {t(`building.via.${m.joinedVia}`, m.joinedVia)}
+                    </span>
+                  )}
+                </span>
                 <span className="text-slate-400">
                   {m.apartmentNumber ? `${t("building.aptShort", { num: m.apartmentNumber })} · ` : ""}
                   {t(`roles.${m.role}`, m.role)}
@@ -338,6 +345,11 @@ function InviteLinks() {
                     </button>
                   )}
                 </div>
+                {inv.usedBy.length > 0 && (
+                  <p className="mt-2 text-xs text-slate-500">
+                    <span className="text-slate-400">{t("building.inviteJoinedBy")}:</span> {inv.usedBy.join(", ")}
+                  </p>
+                )}
               </div>
             </li>
           ))}
@@ -351,13 +363,13 @@ function InviteLinks() {
 
 function FindOrJoin({ onChanged }: { onChanged: () => void }) {
   const { t } = useTranslation();
-  const [tab, setTab] = useState<"find" | "code" | "create">("find");
+  const [tab, setTab] = useState<"find" | "code">("find");
 
   return (
     <div className="max-w-md mx-auto">
       <h1 className="text-xl font-semibold text-slate-800 mb-3">{t("building.setupTitle")}</h1>
       <div className="flex gap-2 mb-4 flex-wrap">
-        {(["find", "code", "create"] as const).map((tabKey) => (
+        {(["find", "code"] as const).map((tabKey) => (
           <button
             key={tabKey}
             onClick={() => setTab(tabKey)}
@@ -370,7 +382,6 @@ function FindOrJoin({ onChanged }: { onChanged: () => void }) {
 
       {tab === "find" && <FindBuilding onChanged={onChanged} />}
       {tab === "code" && <JoinWithCode onChanged={onChanged} />}
-      {tab === "create" && <CreateBuilding onChanged={onChanged} />}
     </div>
   );
 }
@@ -444,32 +455,6 @@ function JoinWithCode({ onChanged }: { onChanged: () => void }) {
       <Field label={t("building.joinCodeField")} value={code} onChange={setCode} required />
       <Field label={t("building.yourApartment")} value={apt} onChange={setApt} />
       <Submit pending={join.isPending}>{t("building.joinBuilding")}</Submit>
-    </form>
-  );
-}
-
-function CreateBuilding({ onChanged }: { onChanged: () => void }) {
-  const { t } = useTranslation();
-  const [name, setName] = useState("");
-  const [lang, setLang] = useState("fi");
-  const [apt, setApt] = useState("");
-  const create = useMutation({
-    mutationFn: async () => (await api.post("/buildings", { name, sharedLanguage: lang, apartmentNumber: apt })).data,
-    onSuccess: () => { toast.success(t("building.toastCreated")); onChanged(); },
-    onError: () => toast.error(t("building.toastCouldNotCreate")),
-  });
-  return (
-    <form onSubmit={(e) => { e.preventDefault(); create.mutate(); }} className="flex flex-col gap-3">
-      <Field label={t("building.buildingName")} value={name} onChange={setName} required />
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-slate-600">{t("building.sharedLanguage")}</span>
-        <select value={lang} onChange={(e) => setLang(e.target.value)} className="border border-slate-300 rounded-lg px-3 py-2">
-          <option value="fi">{t("languages.fi")}</option>
-          <option value="en">{t("languages.en")}</option>
-        </select>
-      </label>
-      <Field label={t("building.yourApartment")} value={apt} onChange={setApt} />
-      <Submit pending={create.isPending}>{t("building.createBuilding")}</Submit>
     </form>
   );
 }

@@ -110,6 +110,18 @@ export default function AdminPage() {
     },
   });
 
+  const [newBuilding, setNewBuilding] = useState({ name: "", sharedLanguage: "fi", address: "" });
+  const createBuilding = useMutation({
+    mutationFn: async () => (await api.post("/admin/buildings", newBuilding)).data,
+    onSuccess: () => {
+      toast.success(t("admin.buildingCreated"));
+      setNewBuilding({ name: "", sharedLanguage: "fi", address: "" });
+      void qc.invalidateQueries({ queryKey: ["admin-buildings"] });
+      void qc.invalidateQueries({ queryKey: ["admin-overview"] });
+    },
+    onError: () => toast.error(t("admin.buildingCreateFailed")),
+  });
+
   const [link, setLink] = useState({ title: "", description: "", url: "" });
   const addLink = useMutation({
     mutationFn: async () => (await api.post("/admin/resources", link)).data,
@@ -259,6 +271,34 @@ export default function AdminPage() {
       {/* Buildings */}
       <section className="bg-white border border-slate-200 rounded-xl p-4 overflow-x-auto">
         <h2 className="text-sm font-semibold text-slate-700 mb-3">{t("admin.buildingsTitle")}</h2>
+
+        <form
+          onSubmit={(e) => { e.preventDefault(); if (newBuilding.name.trim()) createBuilding.mutate(); }}
+          className="grid gap-2 sm:grid-cols-4 mb-4"
+        >
+          <input
+            value={newBuilding.name}
+            onChange={(e) => setNewBuilding({ ...newBuilding, name: e.target.value })}
+            placeholder={t("admin.newBuildingName")}
+            className="border border-slate-300 rounded-lg px-3 py-2 text-sm sm:col-span-2"
+          />
+          <select
+            value={newBuilding.sharedLanguage}
+            onChange={(e) => setNewBuilding({ ...newBuilding, sharedLanguage: e.target.value })}
+            className="border border-slate-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="fi">{t("languages.fi")}</option>
+            <option value="en">{t("languages.en")}</option>
+          </select>
+          <button
+            type="submit"
+            disabled={createBuilding.isPending || !newBuilding.name.trim()}
+            className="bg-teal-700 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-teal-800 disabled:opacity-50"
+          >
+            {t("admin.createBuilding")}
+          </button>
+        </form>
+
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-slate-400 text-xs">

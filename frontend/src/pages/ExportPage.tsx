@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
@@ -25,30 +25,36 @@ export default function ExportPage() {
   const [subjectApartment, setSubjectApartment] = useState("");
   const [includeArchived, setIncludeArchived] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   function toggle(c: Category) {
     setCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
   }
 
+  function body(format: string) {
+    return {
+      from: from ? new Date(from).toISOString() : null,
+      to: to ? new Date(`${to}T23:59:59`).toISOString() : null,
+      categories: categories.length ? categories : null,
+      subjectApartment: subjectApartment || null,
+      includeArchived,
+      format,
+    };
+  }
+
   async function generate(format: "pdf" | "excel" | "word") {
     setBusy(true);
     try {
-      const res = await api.post(
-        "/export",
-        {
-          from: from ? new Date(from).toISOString() : null,
-          to: to ? new Date(`${to}T23:59:59`).toISOString() : null,
-          categories: categories.length ? categories : null,
-          subjectApartment: subjectApartment || null,
-          includeArchived,
-          format,
-        },
-        { responseType: "blob" },
-      );
-      const url = URL.createObjectURL(res.data as Blob);
       if (format === "pdf") {
-        window.open(url, "_blank");
+        // Render the report in an in-app preview so it works on phones, where
+        // opening a blob: URL in a new tab is unreliable. The user prints/saves
+        // as PDF from there with the browser's own print action.
+        const res = await api.post("/export", body(format), { responseType: "text" });
+        setPreviewHtml(res.data as string);
       } else {
+        const res = await api.post("/export", body(format), { responseType: "blob" });
+        const url = URL.createObjectURL(res.data as Blob);
         const a = document.createElement("a");
         a.href = url;
         a.download = format === "excel" ? "kotirauha-raportti.xlsx" : "kotirauha-raportti.docx";
@@ -127,6 +133,29 @@ export default function ExportPage() {
           </button>
         </div>
       </div>
+
+      {previewHtml !== null && (
+        <div className="fixed inset-0 z-50 bg-white flex flex-col">
+          <div className="flex items-center justify-between gap-2 p-3 border-b border-slate-200">
+            <span className="text-sm font-medium text-slate-700">{t("exportPage.previewTitle")}</span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => iframeRef.current?.contentWindow?.print()}
+                className="bg-teal-700 text-white rounded-lg py-1.5 px-4 text-sm font-medium hover:bg-teal-800"
+              >
+                {t("exportPage.printSave")}
+              </button>
+              <button
+                onClick={() => setPreviewHtml(null)}
+                className="border border-slate-300 text-slate-700 rounded-lg py-1.5 px-4 text-sm hover:bg-slate-100"
+              >
+                {t("exportPage.close")}
+              </button>
+            </div>
+          </div>
+          <iframe ref={iframeRef} srcDoc={previewHtml} title={t("exportPage.previewTitle")} className="flex-1 w-full" />
+        </div>
+      )}
     </div>
   );
 }

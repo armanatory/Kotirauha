@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Home, PlusCircle, Building2, BarChart3, BookOpen, Shield, User, LogOut } from "lucide-react";
 import { useAuth } from "@/auth/AuthContext";
 import { BRAND } from "@/lib/branding";
+import InstallHint from "@/components/InstallHint";
 
 interface NavItem {
   to: string;
@@ -121,6 +122,7 @@ export default function AppLayout() {
         </header>
 
         <main className="flex-1 p-4 md:p-6 overflow-auto pb-24 md:pb-6">
+          <InstallHint />
           <Outlet />
         </main>
 

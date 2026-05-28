@@ -94,6 +94,7 @@ export interface MemberDto {
   displayName: string;
   role: string;
   apartmentNumber: string | null;
+  joinedVia: string | null;
 }
 
 export interface InviteDto {
@@ -107,6 +108,7 @@ export interface InviteDto {
   createdAt: string;
   revoked: boolean;
   active: boolean;
+  usedBy: string[];
 }
 
 export interface InvitePreview {
