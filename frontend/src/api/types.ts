@@ -95,3 +95,22 @@ export interface MemberDto {
   role: string;
   apartmentNumber: string | null;
 }
+
+export interface InviteDto {
+  id: string;
+  token: string;
+  url: string;
+  title: string | null;
+  maxUses: number | null;
+  usedCount: number;
+  expiresAt: string | null;
+  createdAt: string;
+  revoked: boolean;
+  active: boolean;
+}
+
+export interface InvitePreview {
+  valid: boolean;
+  buildingName: string;
+  title: string | null;
+}

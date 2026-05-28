@@ -2,6 +2,33 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { api, getToken, setToken } from "@/lib/api";
 import i18n from "@/i18n";
 
+const PENDING_INVITE_KEY = "kotirauha_pending_invite";
+
+export function setPendingInvite(token: string) {
+  localStorage.setItem(PENDING_INVITE_KEY, token);
+}
+export function getPendingInvite(): string | null {
+  return localStorage.getItem(PENDING_INVITE_KEY);
+}
+export function clearPendingInvite() {
+  localStorage.removeItem(PENDING_INVITE_KEY);
+}
+
+// If the user arrived via an invitation link, join that building right after
+// sign-in so they land straight in it. Best effort: ignore failures (expired
+// link, already in a building) so login still succeeds.
+async function redeemPendingInvite() {
+  const token = getPendingInvite();
+  if (!token) return;
+  try {
+    await api.post(`/invites/${token}/redeem`, {});
+  } catch {
+    /* expired or already a member; nothing to do */
+  } finally {
+    clearPendingInvite();
+  }
+}
+
 export interface Membership {
   buildingId: string;
   buildingName: string;
@@ -74,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function verify(token: string) {
     const { data } = await api.post<{ token: string; profileComplete: boolean }>("/auth/verify", { token });
     setToken(data.token);
+    await redeemPendingInvite();
     await refresh();
     return { profileComplete: data.profileComplete };
   }
@@ -81,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function verifyCode(email: string, code: string) {
     const { data } = await api.post<{ token: string; profileComplete: boolean }>("/auth/verify-code", { email, code });
     setToken(data.token);
+    await redeemPendingInvite();
     await refresh();
     return { profileComplete: data.profileComplete };
   }

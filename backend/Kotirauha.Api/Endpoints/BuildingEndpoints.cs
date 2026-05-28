@@ -17,6 +17,10 @@ public record BrowseBuildingDto(Guid Id, string Name, string? Address, bool Requ
 public record CreateJoinRequest(string? ApartmentNumber);
 public record MyJoinRequestDto(Guid BuildingId, string BuildingName);
 public record JoinRequestDto(Guid Id, string RequesterName, string RequesterEmail, string? ApartmentNumber, DateTimeOffset CreatedAt);
+public record CreateInviteRequest(string? Title, int? MaxUses, int? ExpiresInDays);
+public record InviteDto(
+    Guid Id, string Token, string Url, string? Title, int? MaxUses, int UsedCount,
+    DateTimeOffset? ExpiresAt, DateTimeOffset CreatedAt, bool Revoked, bool Active);
 
 public static class BuildingEndpoints
 {
@@ -135,6 +139,70 @@ public static class BuildingEndpoints
 
             await db.SaveChangesAsync();
             return Results.Ok(new { joinCode = m.Building!.JoinCode });
+        });
+
+        // ── Board: shareable invitation links (instant resident join) ──
+        group.MapPost("/invites", async (CreateInviteRequest req, HttpContext ctx, KotirauhaDbContext db) =>
+        {
+            var userId = ctx.User.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+            var m = await db.GetMembershipAsync(userId.Value);
+            if (m is null || m.Role is MembershipRole.Resident)
+                return Results.Problem("Board access required.", statusCode: 403);
+
+            var title = string.IsNullOrWhiteSpace(req.Title) ? null : req.Title.Trim();
+            if (title is { Length: > 120 }) title = title[..120];
+            int? maxUses = req.MaxUses is > 0 ? req.MaxUses : null;
+            DateTimeOffset? expiresAt = req.ExpiresInDays is > 0
+                ? DateTimeOffset.UtcNow.AddDays(req.ExpiresInDays.Value)
+                : null;
+
+            var invite = new BuildingInvite
+            {
+                BuildingId = m.BuildingId,
+                Token = await GenerateUniqueInviteTokenAsync(db),
+                Title = title,
+                MaxUses = maxUses,
+                ExpiresAt = expiresAt,
+                CreatedByUserId = userId.Value,
+            };
+            db.Invites.Add(invite);
+            await db.SaveChangesAsync();
+
+            return Results.Ok(ToInviteDto(invite));
+        });
+
+        group.MapGet("/invites", async (HttpContext ctx, KotirauhaDbContext db) =>
+        {
+            var userId = ctx.User.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+            var m = await db.GetMembershipAsync(userId.Value);
+            if (m is null || m.Role is MembershipRole.Resident)
+                return Results.Problem("Board access required.", statusCode: 403);
+
+            var invites = await db.Invites
+                .Where(i => i.BuildingId == m.BuildingId)
+                .OrderByDescending(i => i.CreatedAt)
+                .ToListAsync();
+            return Results.Ok(invites.Select(ToInviteDto));
+        });
+
+        group.MapPost("/invites/{inviteId:guid}/revoke", async (Guid inviteId, HttpContext ctx, KotirauhaDbContext db) =>
+        {
+            var userId = ctx.User.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+            var m = await db.GetMembershipAsync(userId.Value);
+            if (m is null || m.Role is MembershipRole.Resident)
+                return Results.Problem("Board access required.", statusCode: 403);
+
+            var invite = await db.Invites.FirstOrDefaultAsync(i => i.Id == inviteId && i.BuildingId == m.BuildingId);
+            if (invite is null) return Results.NotFound();
+            if (invite.RevokedAt is null)
+            {
+                invite.RevokedAt = DateTimeOffset.UtcNow;
+                await db.SaveChangesAsync();
+            }
+            return Results.Ok(new { revoked = true });
         });
 
         // ── Browse buildings to request to join ──
@@ -298,6 +366,25 @@ public static class BuildingEndpoints
     // share and type. Stored normalized (uppercase, no spaces).
     private static string NormalizeCode(string raw) =>
         new string(raw.Where(ch => !char.IsWhiteSpace(ch)).ToArray()).ToUpperInvariant();
+
+    internal static InviteDto ToInviteDto(BuildingInvite i)
+    {
+        var appBase = (Environment.GetEnvironmentVariable("APP_BASE_URL") ?? "http://localhost:5173").TrimEnd('/');
+        return new InviteDto(
+            i.Id, i.Token, $"{appBase}/invite/{i.Token}", i.Title, i.MaxUses, i.UsedCount,
+            i.ExpiresAt, i.CreatedAt, i.RevokedAt is not null, i.IsUsable(DateTimeOffset.UtcNow));
+    }
+
+    private static async Task<string> GenerateUniqueInviteTokenAsync(KotirauhaDbContext db)
+    {
+        for (var attempt = 0; attempt < 10; attempt++)
+        {
+            var token = Convert.ToBase64String(RandomNumberGenerator.GetBytes(18))
+                .TrimEnd('=').Replace('+', '-').Replace('/', '_');
+            if (!await db.Invites.AnyAsync(i => i.Token == token)) return token;
+        }
+        return Guid.NewGuid().ToString("N");
+    }
 
     private static async Task<string> GenerateUniqueJoinCodeAsync(KotirauhaDbContext db)
     {

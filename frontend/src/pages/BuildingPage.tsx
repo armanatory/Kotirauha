@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuth } from "@/auth/AuthContext";
-import type { BuildingDto, MemberDto } from "@/api/types";
+import type { BuildingDto, MemberDto, InviteDto } from "@/api/types";
 
 interface BrowseBuilding { id: string; name: string; address: string | null; requested: boolean }
 interface JoinRequest { id: string; requesterName: string; requesterEmail: string; apartmentNumber: string | null; createdAt: string }
@@ -182,6 +182,8 @@ function BuildingHome({ building, onChanged }: { building: BuildingDto; onChange
         </section>
       )}
 
+      {isBoard && <InviteLinks />}
+
       {isBoard && (
         <section className="bg-white border border-slate-200 rounded-xl p-4">
           <h2 className="text-sm font-semibold text-slate-700 mb-2">{t("building.members")}</h2>
@@ -199,6 +201,144 @@ function BuildingHome({ building, onChanged }: { building: BuildingDto; onChange
         </section>
       )}
     </div>
+  );
+}
+
+function InviteLinks() {
+  const { t } = useTranslation();
+  const qc = useQueryClient();
+  const [title, setTitle] = useState("");
+  const [maxUses, setMaxUses] = useState("");
+  const [expiresInDays, setExpiresInDays] = useState("30");
+
+  const invitesQ = useQuery({
+    queryKey: ["invites"],
+    queryFn: async () => (await api.get<InviteDto[]>("/buildings/invites")).data,
+  });
+
+  const create = useMutation({
+    mutationFn: async () =>
+      (
+        await api.post<InviteDto>("/buildings/invites", {
+          title: title.trim() || null,
+          maxUses: maxUses ? Number(maxUses) : null,
+          expiresInDays: expiresInDays ? Number(expiresInDays) : null,
+        })
+      ).data,
+    onSuccess: () => {
+      toast.success(t("building.inviteCreated"));
+      setTitle("");
+      setMaxUses("");
+      void qc.invalidateQueries({ queryKey: ["invites"] });
+    },
+    onError: () => toast.error(t("building.inviteFailed")),
+  });
+
+  const revoke = useMutation({
+    mutationFn: async (id: string) => (await api.post(`/buildings/invites/${id}/revoke`)).data,
+    onSuccess: () => {
+      toast.success(t("building.inviteRevoked"));
+      void qc.invalidateQueries({ queryKey: ["invites"] });
+    },
+  });
+
+  async function copy(url: string) {
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success(t("building.inviteCopied"));
+    } catch {
+      toast.error(t("building.inviteCopyFailed"));
+    }
+  }
+
+  return (
+    <section className="bg-white border border-slate-200 rounded-xl p-4">
+      <h2 className="text-sm font-semibold text-slate-700 mb-1">{t("building.inviteLinks")}</h2>
+      <p className="text-xs text-slate-400 mb-3">{t("building.inviteLinksHint")}</p>
+
+      <form
+        onSubmit={(e) => { e.preventDefault(); create.mutate(); }}
+        className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4"
+      >
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder={t("building.inviteTitlePlaceholder")}
+          className="border border-slate-300 rounded-lg px-3 py-2 text-sm sm:col-span-2"
+        />
+        <label className="flex flex-col gap-1 text-xs text-slate-500">
+          {t("building.inviteMaxUses")}
+          <input
+            type="number"
+            min={1}
+            value={maxUses}
+            onChange={(e) => setMaxUses(e.target.value)}
+            placeholder={t("building.inviteNoLimit")}
+            className="border border-slate-300 rounded-lg px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-xs text-slate-500">
+          {t("building.inviteExpiry")}
+          <select
+            value={expiresInDays}
+            onChange={(e) => setExpiresInDays(e.target.value)}
+            className="border border-slate-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="7">{t("building.invite7d")}</option>
+            <option value="30">{t("building.invite30d")}</option>
+            <option value="90">{t("building.invite90d")}</option>
+            <option value="">{t("building.inviteNeverExpires")}</option>
+          </select>
+        </label>
+        <button
+          type="submit"
+          disabled={create.isPending}
+          className="sm:col-span-2 bg-teal-700 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-teal-800 disabled:opacity-50"
+        >
+          {t("building.inviteCreate")}
+        </button>
+      </form>
+
+      {invitesQ.data && invitesQ.data.length > 0 ? (
+        <ul className="divide-y divide-slate-100">
+          {invitesQ.data.map((inv) => (
+            <li key={inv.id} className="py-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm text-slate-700 font-medium truncate">
+                    {inv.title || t("building.inviteUntitled")}
+                    {!inv.active && (
+                      <span className="ml-2 text-xs text-rose-600">
+                        {inv.revoked ? t("building.inviteRevokedTag") : t("building.inviteExpiredTag")}
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    {t("building.inviteUses", { used: inv.usedCount, max: inv.maxUses ?? "∞" })}
+                    {inv.expiresAt ? ` · ${t("building.inviteUntil", { date: new Date(inv.expiresAt).toLocaleDateString() })}` : ""}
+                  </p>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  {inv.active && (
+                    <button onClick={() => copy(inv.url)} className="text-sm text-teal-700 underline">
+                      {t("building.inviteCopy")}
+                    </button>
+                  )}
+                  {!inv.revoked && (
+                    <button onClick={() => revoke.mutate(inv.id)} disabled={revoke.isPending}
+                      className="text-sm text-rose-600 underline disabled:opacity-50">
+                      {t("building.inviteRevoke")}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-sm text-slate-400">{t("building.inviteNone")}</p>
+      )}
+    </section>
   );
 }
 

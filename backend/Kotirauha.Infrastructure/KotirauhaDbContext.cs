@@ -19,6 +19,7 @@ public class KotirauhaDbContext : DbContext
     public DbSet<IncidentRevision> Revisions => Set<IncidentRevision>();
     public DbSet<ResourceLink> ResourceLinks => Set<ResourceLink>();
     public DbSet<BuildingJoinRequest> JoinRequests => Set<BuildingJoinRequest>();
+    public DbSet<BuildingInvite> Invites => Set<BuildingInvite>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -105,6 +106,15 @@ public class KotirauhaDbContext : DbContext
             e.HasIndex(x => new { x.UserId, x.Status });
             e.HasOne(x => x.Building).WithMany().HasForeignKey(x => x.BuildingId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<BuildingInvite>(e =>
+        {
+            e.Property(x => x.Token).HasMaxLength(64).IsRequired();
+            e.Property(x => x.Title).HasMaxLength(120);
+            e.HasIndex(x => x.Token).IsUnique();
+            e.HasIndex(x => x.BuildingId);
+            e.HasOne(x => x.Building).WithMany().HasForeignKey(x => x.BuildingId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }
