@@ -79,6 +79,7 @@ api.MapExportEndpoints();
 api.MapInsightsEndpoints();
 api.MapAdminEndpoints();
 api.MapResourceEndpoints();
+api.MapTrackEndpoints();
 
 app.Run();
 

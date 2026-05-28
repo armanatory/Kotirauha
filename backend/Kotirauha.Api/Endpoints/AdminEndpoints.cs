@@ -11,6 +11,12 @@ public record AdminBuildingDto(Guid Id, string Name, string SharedLanguage, int 
 public record TranslationStatusDto(string Provider, bool IsStub, string Note);
 public record AdminUserDto(Guid Id, string Email, string DisplayName, bool IsAdmin, Guid? BuildingId, string? BuildingName, string? Role);
 public record AssignRequest(Guid UserId, Guid? BuildingId, string Role);
+public record CountRow(string Label, int Count);
+public record DayCount(string Date, int Count);
+public record AnalyticsDto(
+    int TotalVisits, int UniqueVisitors, int Days, bool GeoEnabled,
+    List<DayCount> ByDay, List<CountRow> TopPages, List<CountRow> TopReferrers,
+    List<CountRow> ByLanguage, List<CountRow> ByCountry);
 
 public static class AdminEndpoints
 {
@@ -112,6 +118,48 @@ public static class AdminEndpoints
             db.Users.Remove(user);
             await db.SaveChangesAsync();
             return Results.Ok(new { deleted = true });
+        });
+
+        group.MapGet("/analytics", async (HttpContext ctx, KotirauhaDbContext db, IGeoIpService geo, int? days) =>
+        {
+            if (!await AdminGuard.IsAdminAsync(ctx, db)) return Forbidden();
+
+            var window = Math.Clamp(days ?? 30, 1, 365);
+            var since = DateTimeOffset.UtcNow.AddDays(-window);
+            var events = db.VisitEvents.Where(v => v.CreatedAt >= since);
+
+            var total = await events.CountAsync();
+            var unique = await events.Where(v => v.VisitorHash != null)
+                .Select(v => v.VisitorHash).Distinct().CountAsync();
+
+            // Pull just the columns we aggregate; grouping happens in memory so the
+            // day series and label rollups stay simple and provider-agnostic.
+            var rows = await events
+                .Select(v => new { v.CreatedAt, v.Path, v.Referrer, v.Language, v.Country, v.VisitorHash })
+                .ToListAsync();
+
+            var byDay = rows
+                .GroupBy(r => r.CreatedAt.UtcDateTime.Date)
+                .OrderBy(g => g.Key)
+                .Select(g => new DayCount(g.Key.ToString("yyyy-MM-dd"), g.Count()))
+                .ToList();
+
+            var topPages = rows.Where(r => !string.IsNullOrEmpty(r.Path))
+                .GroupBy(r => r.Path).Select(g => new CountRow(g.Key, g.Count()))
+                .OrderByDescending(x => x.Count).Take(10).ToList();
+            var topReferrers = rows.Where(r => !string.IsNullOrWhiteSpace(r.Referrer))
+                .GroupBy(r => r.Referrer!).Select(g => new CountRow(g.Key, g.Count()))
+                .OrderByDescending(x => x.Count).Take(10).ToList();
+            var byLanguage = rows.Where(r => !string.IsNullOrWhiteSpace(r.Language))
+                .GroupBy(r => r.Language!).Select(g => new CountRow(g.Key, g.Count()))
+                .OrderByDescending(x => x.Count).ToList();
+            var byCountry = rows.Where(r => !string.IsNullOrWhiteSpace(r.Country))
+                .GroupBy(r => r.Country!).Select(g => new CountRow(g.Key, g.Count()))
+                .OrderByDescending(x => x.Count).Take(20).ToList();
+
+            return Results.Ok(new AnalyticsDto(
+                total, unique, window, geo.Enabled,
+                byDay, topPages, topReferrers, byLanguage, byCountry));
         });
 
         group.MapGet("/translation-status", async (HttpContext ctx, KotirauhaDbContext db, ITranslationProvider provider) =>

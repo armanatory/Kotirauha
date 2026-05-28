@@ -34,6 +34,11 @@ public static class DependencyInjection
         RegisterSuggestionProvider(services);
         RegisterEmailSender(services);
 
+        var geoDbPath = Environment.GetEnvironmentVariable("GEOIP_DB_PATH")
+                        ?? Path.Combine(AppContext.BaseDirectory, "geoip", "GeoLite2-Country.mmdb");
+        services.AddSingleton<IGeoIpService>(sp =>
+            new GeoLiteService(geoDbPath, sp.GetRequiredService<ILogger<GeoLiteService>>()));
+
         services.AddScoped<EntryTranslationService>();
 
         return services;

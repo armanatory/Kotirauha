@@ -20,6 +20,7 @@ import ResourcesPage from "@/pages/ResourcesPage";
 import ExportPage from "@/pages/ExportPage";
 import ProfilePage from "@/pages/ProfilePage";
 import NotFoundPage from "@/pages/NotFoundPage";
+import PageTracker from "@/components/PageTracker";
 
 function Protected({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -32,6 +33,7 @@ function Protected({ children }: { children: ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
+      <PageTracker />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/install" element={<InstallPage />} />

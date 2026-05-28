@@ -20,6 +20,7 @@ public class KotirauhaDbContext : DbContext
     public DbSet<ResourceLink> ResourceLinks => Set<ResourceLink>();
     public DbSet<BuildingJoinRequest> JoinRequests => Set<BuildingJoinRequest>();
     public DbSet<BuildingInvite> Invites => Set<BuildingInvite>();
+    public DbSet<VisitEvent> VisitEvents => Set<VisitEvent>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -115,6 +116,16 @@ public class KotirauhaDbContext : DbContext
             e.HasIndex(x => x.Token).IsUnique();
             e.HasIndex(x => x.BuildingId);
             e.HasOne(x => x.Building).WithMany().HasForeignKey(x => x.BuildingId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        b.Entity<VisitEvent>(e =>
+        {
+            e.Property(x => x.Path).HasMaxLength(512).IsRequired();
+            e.Property(x => x.Referrer).HasMaxLength(512);
+            e.Property(x => x.Language).HasMaxLength(16);
+            e.Property(x => x.Country).HasMaxLength(2);
+            e.Property(x => x.VisitorHash).HasMaxLength(64);
+            e.HasIndex(x => x.CreatedAt);
         });
     }
 }

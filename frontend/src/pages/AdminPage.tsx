@@ -40,11 +40,45 @@ interface TranslationStatus {
   isStub: boolean;
   note: string;
 }
+interface CountRow {
+  label: string;
+  count: number;
+}
+interface Analytics {
+  totalVisits: number;
+  uniqueVisitors: number;
+  days: number;
+  geoEnabled: boolean;
+  byDay: { date: string; count: number }[];
+  topPages: CountRow[];
+  topReferrers: CountRow[];
+  byLanguage: CountRow[];
+  byCountry: CountRow[];
+}
+
+const COUNTRY_NAMES =
+  typeof Intl !== "undefined" && "DisplayNames" in Intl
+    ? new Intl.DisplayNames(["en"], { type: "region" })
+    : null;
+function countryName(code: string) {
+  try {
+    return COUNTRY_NAMES?.of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
 
 export default function AdminPage() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const qc = useQueryClient();
+
+  const [analyticsDays, setAnalyticsDays] = useState(30);
+  const analyticsQ = useQuery({
+    queryKey: ["admin-analytics", analyticsDays],
+    queryFn: async () => (await api.get<Analytics>("/admin/analytics", { params: { days: analyticsDays } })).data,
+    enabled: user?.isAdmin,
+  });
 
   const overviewQ = useQuery({ queryKey: ["admin-overview"], queryFn: async () => (await api.get<Overview>("/admin/overview")).data, enabled: user?.isAdmin });
   const buildingsQ = useQuery({ queryKey: ["admin-buildings"], queryFn: async () => (await api.get<AdminBuilding[]>("/admin/buildings")).data, enabled: user?.isAdmin });
@@ -107,6 +141,54 @@ export default function AdminPage() {
         <Stat label={t("admin.entries")} value={o?.entries} />
         <Stat label={t("admin.archived")} value={o?.archivedEntries} />
         <Stat label={t("admin.translations")} value={o?.translations} />
+      </section>
+
+      {/* Product analytics */}
+      <section className="bg-white border border-slate-200 rounded-xl p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold text-slate-700">{t("admin.analyticsTitle")}</h2>
+          <div className="flex gap-1">
+            {[7, 30, 90].map((d) => (
+              <button
+                key={d}
+                onClick={() => setAnalyticsDays(d)}
+                className={`px-2.5 py-1 rounded-lg text-xs ${analyticsDays === d ? "bg-teal-700 text-white" : "bg-slate-100 text-slate-600"}`}
+              >
+                {t("admin.lastDays", { days: d })}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {analyticsQ.data ? (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
+              <Stat label={t("admin.totalVisits")} value={analyticsQ.data.totalVisits} />
+              <Stat label={t("admin.uniqueVisitors")} value={analyticsQ.data.uniqueVisitors} />
+              <Stat label={t("admin.activeDays")} value={analyticsQ.data.byDay.length} />
+            </div>
+
+            {analyticsQ.data.byDay.length > 0 && (
+              <div className="mb-4">
+                <p className="text-xs text-slate-400 mb-1">{t("admin.visitsPerDay")}</p>
+                <DayBars data={analyticsQ.data.byDay} />
+              </div>
+            )}
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <RankList title={t("admin.topPages")} rows={analyticsQ.data.topPages} empty={t("admin.noData")} />
+              <RankList title={t("admin.topReferrers")} rows={analyticsQ.data.topReferrers} empty={t("admin.noReferrers")} />
+              <RankList title={t("admin.byLanguage")} rows={analyticsQ.data.byLanguage} empty={t("admin.noData")} />
+              <RankList
+                title={t("admin.byCountry")}
+                rows={analyticsQ.data.byCountry.map((r) => ({ label: countryName(r.label), count: r.count }))}
+                empty={analyticsQ.data.geoEnabled ? t("admin.noData") : t("admin.geoDisabled")}
+              />
+            </div>
+          </>
+        ) : (
+          <p className="text-sm text-slate-400">{t("admin.noData")}</p>
+        )}
       </section>
 
       {statusQ.data && (
@@ -258,6 +340,48 @@ function Stat({ label, value }: { label: string; value: number | undefined }) {
     <div className="bg-white border border-slate-200 rounded-xl p-4">
       <p className="text-2xl font-semibold text-slate-800">{value ?? "-"}</p>
       <p className="text-xs text-slate-500">{label}</p>
+    </div>
+  );
+}
+
+function DayBars({ data }: { data: { date: string; count: number }[] }) {
+  const max = Math.max(1, ...data.map((d) => d.count));
+  return (
+    <div className="flex items-end gap-0.5 h-24">
+      {data.map((d) => (
+        <div key={d.date} className="flex-1 group relative flex items-end" title={`${d.date}: ${d.count}`}>
+          <div
+            className="w-full bg-teal-600/80 rounded-t hover:bg-teal-700"
+            style={{ height: `${Math.max(3, (d.count / max) * 100)}%` }}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RankList({ title, rows, empty }: { title: string; rows: CountRow[]; empty: string }) {
+  const max = Math.max(1, ...rows.map((r) => r.count));
+  return (
+    <div className="border border-slate-100 rounded-lg p-3">
+      <p className="text-xs font-semibold text-slate-600 mb-2">{title}</p>
+      {rows.length === 0 ? (
+        <p className="text-xs text-slate-400">{empty}</p>
+      ) : (
+        <ul className="space-y-1.5">
+          {rows.map((r) => (
+            <li key={r.label} className="text-xs">
+              <div className="flex justify-between gap-2 mb-0.5">
+                <span className="text-slate-600 truncate" title={r.label}>{r.label}</span>
+                <span className="text-slate-400 shrink-0">{r.count}</span>
+              </div>
+              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full bg-teal-500 rounded-full" style={{ width: `${(r.count / max) * 100}%` }} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
