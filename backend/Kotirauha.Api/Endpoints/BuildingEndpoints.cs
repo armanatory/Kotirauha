@@ -11,7 +11,7 @@ namespace Kotirauha.Api.Endpoints;
 public record JoinBuildingRequest(string JoinCode, string? ApartmentNumber);
 public record SetJoinCodeRequest(string? Code);
 public record BuildingDto(Guid Id, string Name, string? Address, string SharedLanguage, string Role, string? JoinCode);
-public record MemberDto(Guid UserId, string DisplayName, string Role, string? ApartmentNumber, string? JoinedVia);
+public record MemberDto(Guid UserId, string DisplayName, string Email, string Role, string? ApartmentNumber, string? JoinedVia, int ReportCount);
 public record BrowseBuildingDto(Guid Id, string Name, string? Address, bool Requested);
 public record CreateJoinRequest(string? ApartmentNumber);
 public record MyJoinRequestDto(Guid BuildingId, string BuildingName);
@@ -81,11 +81,20 @@ public static class BuildingEndpoints
             var members = await db.Memberships
                 .Where(x => x.BuildingId == m.BuildingId)
                 .Include(x => x.User)
-                .Select(x => new MemberDto(
-                    x.UserId, x.User!.DisplayName, x.Role.ToString().ToLowerInvariant(), x.ApartmentNumber, x.JoinedVia))
                 .ToListAsync();
 
-            return Results.Ok(members);
+            var reportCounts = (await db.Entries
+                    .Where(e => e.BuildingId == m.BuildingId)
+                    .GroupBy(e => e.ReporterUserId)
+                    .Select(g => new { UserId = g.Key, Count = g.Count() })
+                    .ToListAsync())
+                .ToDictionary(x => x.UserId, x => x.Count);
+
+            var rows = members.Select(x => new MemberDto(
+                x.UserId, x.User!.DisplayName, x.User!.Email, x.Role.ToString().ToLowerInvariant(),
+                x.ApartmentNumber, x.JoinedVia, reportCounts.GetValueOrDefault(x.UserId)));
+
+            return Results.Ok(rows);
         });
 
         // Set a custom join code (if `code` provided) or regenerate a random one.

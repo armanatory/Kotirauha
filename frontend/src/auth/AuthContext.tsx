@@ -116,8 +116,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signInWithGoogle(credential: string) {
-    const { data } = await api.post<{ token: string; profileComplete: boolean }>("/auth/google", { credential });
+    const { data } = await api.post<{ token: string; profileComplete: boolean; suggestedName?: string | null }>(
+      "/auth/google",
+      { credential },
+    );
     setToken(data.token);
+    // Offer the Google name as a starting point for the nickname they'll choose.
+    if (!data.profileComplete && data.suggestedName) {
+      localStorage.setItem("kotirauha_suggested_name", data.suggestedName);
+    }
     await redeemPendingInvite();
     await refresh();
     return { profileComplete: data.profileComplete };

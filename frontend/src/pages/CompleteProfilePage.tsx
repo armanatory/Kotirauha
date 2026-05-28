@@ -9,7 +9,7 @@ import { LANGUAGES } from "@/api/types";
 export default function CompleteProfilePage() {
   const { t } = useTranslation();
   const { user, updateProfile } = useAuth();
-  const [displayName, setDisplayName] = useState("");
+  const [displayName, setDisplayName] = useState(() => localStorage.getItem("kotirauha_suggested_name") ?? "");
   const [language, setLanguage] = useState(user?.preferredLanguage === "en" ? "en" : "fi");
   const [submitting, setSubmitting] = useState(false);
 
@@ -18,6 +18,7 @@ export default function CompleteProfilePage() {
     setSubmitting(true);
     try {
       await updateProfile({ displayName, preferredLanguage: language });
+      localStorage.removeItem("kotirauha_suggested_name");
     } catch {
       toast.error(t("auth.couldNotSave"));
     } finally {

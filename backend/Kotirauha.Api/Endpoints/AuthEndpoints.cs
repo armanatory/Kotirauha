@@ -16,6 +16,7 @@ public record VerifyCodeRequest(string Email, string Code);
 public record VerifyResponse(string Token, bool ProfileComplete);
 public record UpdateProfileRequest(string? DisplayName, string? PreferredLanguage);
 public record GoogleSignInRequest(string Credential);
+public record GoogleSignInResponse(string Token, bool ProfileComplete, string? SuggestedName);
 
 public record MembershipDto(Guid BuildingId, string BuildingName, string SharedLanguage, string Role, string? ApartmentNumber);
 public record CurrentUserDto(Guid Id, string Email, string DisplayName, string PreferredLanguage, bool IsAdmin, MembershipDto? Membership);
@@ -62,19 +63,19 @@ public static class AuthEndpoints
             var user = await db.Users.FirstOrDefaultAsync(u => u.Email == address);
             if (user is null)
             {
-                user = new User { Email = address, DisplayName = payload.Name?.Trim() ?? "", PreferredLanguage = "fi" };
+                // Leave the display name empty so first-time users still pick their
+                // own nickname; the Google name is only offered as a suggestion.
+                user = new User { Email = address, DisplayName = "", PreferredLanguage = "fi" };
                 db.Users.Add(user);
-            }
-            else if (string.IsNullOrWhiteSpace(user.DisplayName) && !string.IsNullOrWhiteSpace(payload.Name))
-            {
-                user.DisplayName = payload.Name!.Trim();
             }
 
             if (AdminConfig.IsAdminEmail(address) && !user.IsPlatformAdmin) user.IsPlatformAdmin = true;
             if (!user.IsActive) return Results.Problem("This account is deactivated.", statusCode: 403);
             await db.SaveChangesAsync();
 
-            return Results.Ok(new VerifyResponse(jwt.CreateToken(user), !string.IsNullOrWhiteSpace(user.DisplayName)));
+            var profileComplete = !string.IsNullOrWhiteSpace(user.DisplayName);
+            var suggestedName = profileComplete ? null : payload.Name?.Trim();
+            return Results.Ok(new GoogleSignInResponse(jwt.CreateToken(user), profileComplete, suggestedName));
         });
 
         // Request a one-time login link by email (passwordless).

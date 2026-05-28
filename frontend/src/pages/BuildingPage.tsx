@@ -189,16 +189,21 @@ function BuildingHome({ building, onChanged }: { building: BuildingDto; onChange
           <h2 className="text-sm font-semibold text-slate-700 mb-2">{t("building.members")}</h2>
           <ul className="divide-y divide-slate-100">
             {membersQ.data?.map((m) => (
-              <li key={m.userId} className="py-2 flex justify-between text-sm">
-                <span className="text-slate-700">
-                  {m.displayName}
-                  {m.joinedVia && (
-                    <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
-                      {t(`building.via.${m.joinedVia}`, m.joinedVia)}
-                    </span>
-                  )}
-                </span>
-                <span className="text-slate-400">
+              <li key={m.userId} className="py-2 flex items-start justify-between gap-2 text-sm">
+                <div className="min-w-0">
+                  <p className="text-slate-700">
+                    {m.displayName || m.email}
+                    {m.joinedVia && (
+                      <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">
+                        {t(`building.via.${m.joinedVia}`, m.joinedVia)}
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs text-slate-400 break-all">
+                    {m.email} · {t("building.reportsCount", { count: m.reportCount })}
+                  </p>
+                </div>
+                <span className="text-slate-400 shrink-0 text-right">
                   {m.apartmentNumber ? `${t("building.aptShort", { num: m.apartmentNumber })} · ` : ""}
                   {t(`roles.${m.role}`, m.role)}
                 </span>

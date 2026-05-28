@@ -92,9 +92,11 @@ export interface BuildingDto {
 export interface MemberDto {
   userId: string;
   displayName: string;
+  email: string;
   role: string;
   apartmentNumber: string | null;
   joinedVia: string | null;
+  reportCount: number;
 }
 
 export interface InviteDto {
