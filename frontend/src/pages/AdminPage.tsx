@@ -50,7 +50,7 @@ export default function AdminPage() {
   const buildingsQ = useQuery({ queryKey: ["admin-buildings"], queryFn: async () => (await api.get<AdminBuilding[]>("/admin/buildings")).data, enabled: user?.isAdmin });
   const usersQ = useQuery({ queryKey: ["admin-users"], queryFn: async () => (await api.get<AdminUser[]>("/admin/users")).data, enabled: user?.isAdmin });
   const statusQ = useQuery({ queryKey: ["admin-translation-status"], queryFn: async () => (await api.get<TranslationStatus>("/admin/translation-status")).data, enabled: user?.isAdmin });
-  const resourcesQ = useQuery({ queryKey: ["resources"], queryFn: async () => (await api.get<ResourceLink[]>("/resources")).data, enabled: user?.isAdmin });
+  const resourcesQ = useQuery({ queryKey: ["admin-resources"], queryFn: async () => (await api.get<ResourceLink[]>("/admin/resources")).data, enabled: user?.isAdmin });
 
   const [pending, setPending] = useState<Record<string, { buildingId: string; role: string }>>({});
   const assign = useMutation({
@@ -63,13 +63,26 @@ export default function AdminPage() {
     onError: () => toast.error(t("admin.assignFailed")),
   });
 
+  const removeUser = useMutation({
+    mutationFn: async (id: string) => (await api.delete(`/admin/users/${id}`)).data,
+    onSuccess: () => {
+      toast.success(t("admin.userDeleted"));
+      void qc.invalidateQueries({ queryKey: ["admin-users"] });
+      void qc.invalidateQueries({ queryKey: ["admin-overview"] });
+    },
+    onError: (err: unknown) => {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      toast.error(status === 409 ? t("admin.deleteHasEntries") : t("admin.deleteFailed"));
+    },
+  });
+
   const [link, setLink] = useState({ title: "", description: "", url: "" });
   const addLink = useMutation({
     mutationFn: async () => (await api.post("/admin/resources", link)).data,
     onSuccess: () => {
       toast.success(t("admin.linkAdded"));
       setLink({ title: "", description: "", url: "" });
-      void qc.invalidateQueries({ queryKey: ["resources"] });
+      void qc.invalidateQueries({ queryKey: ["admin-resources"] });
     },
     onError: () => toast.error(t("admin.linkFailed")),
   });
@@ -77,7 +90,7 @@ export default function AdminPage() {
     mutationFn: async (id: string) => (await api.delete(`/admin/resources/${id}`)).data,
     onSuccess: () => {
       toast.success(t("admin.linkRemoved"));
-      void qc.invalidateQueries({ queryKey: ["resources"] });
+      void qc.invalidateQueries({ queryKey: ["admin-resources"] });
     },
   });
 
@@ -146,6 +159,14 @@ export default function AdminPage() {
                   >
                     {t("admin.assign")}
                   </button>
+                  {u.id !== user.id && (
+                    <button
+                      onClick={() => { if (confirm(t("admin.deleteConfirm", { email: u.email }))) removeUser.mutate(u.id); }}
+                      className="text-sm text-rose-600 underline ml-auto"
+                    >
+                      {t("admin.deleteUser")}
+                    </button>
+                  )}
                 </div>
               </li>
             );

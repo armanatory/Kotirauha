@@ -92,6 +92,28 @@ public static class AdminEndpoints
             return Results.Ok(new { ok = true });
         });
 
+        // Delete a user (e.g. test accounts). Blocked if they have filed entries,
+        // so incident records are never orphaned; and you can't delete yourself.
+        group.MapDelete("/users/{userId:guid}", async (Guid userId, HttpContext ctx, KotirauhaDbContext db) =>
+        {
+            if (!await AdminGuard.IsAdminAsync(ctx, db)) return Forbidden();
+            if (ctx.User.GetUserId() == userId)
+                return Results.Problem("You cannot delete your own account.", statusCode: 400);
+
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Id == userId);
+            if (user is null) return Results.NotFound();
+
+            if (await db.Entries.AnyAsync(e => e.ReporterUserId == userId))
+                return Results.Problem("This user has filed reports, so they cannot be deleted (records must be preserved).", statusCode: 409);
+
+            // Memberships and join requests cascade; clean up their magic-link tokens too.
+            var tokens = await db.MagicLinkTokens.Where(t => t.Email == user.Email).ToListAsync();
+            db.MagicLinkTokens.RemoveRange(tokens);
+            db.Users.Remove(user);
+            await db.SaveChangesAsync();
+            return Results.Ok(new { deleted = true });
+        });
+
         group.MapGet("/translation-status", async (HttpContext ctx, KotirauhaDbContext db, ITranslationProvider provider) =>
         {
             if (!await AdminGuard.IsAdminAsync(ctx, db)) return Forbidden();

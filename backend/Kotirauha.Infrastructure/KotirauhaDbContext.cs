@@ -94,6 +94,8 @@ public class KotirauhaDbContext : DbContext
             e.Property(x => x.Title).HasMaxLength(200).IsRequired();
             e.Property(x => x.Url).HasMaxLength(2048).IsRequired();
             e.Property(x => x.Description).HasMaxLength(1000);
+            e.HasIndex(x => x.BuildingId);
+            e.HasOne(x => x.Building).WithMany().HasForeignKey(x => x.BuildingId).OnDelete(DeleteBehavior.Cascade);
         });
 
         b.Entity<BuildingJoinRequest>(e =>
