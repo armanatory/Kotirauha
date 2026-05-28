@@ -55,6 +55,12 @@ const en = {
       installPrompt: "Install the app on your phone",
       installAndroid: "Add to Android",
       installIos: "Add to iPhone",
+      privacy: "Privacy & cookies",
+    },
+    cookie: {
+      message: "We use local storage and minimal analytics to run Kotirauha. No ad tracking.",
+      learnMore: "Learn more",
+      ok: "Got it",
     },
     install: {
       title: "Add Kotirauha to your home screen",
@@ -470,6 +476,12 @@ const fi = {
       installPrompt: "Asenna sovellus puhelimeesi",
       installAndroid: "Lisää Androidille",
       installIos: "Lisää iPhonelle",
+      privacy: "Tietosuoja ja evästeet",
+    },
+    cookie: {
+      message: "Käytämme paikallista tallennusta ja vähäistä analytiikkaa Kotirauhan toimintaan. Ei mainosseurantaa.",
+      learnMore: "Lue lisää",
+      ok: "Selvä",
     },
     install: {
       title: "Lisää Kotirauha kotinäytöllesi",

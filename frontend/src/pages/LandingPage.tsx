@@ -48,6 +48,10 @@ export default function LandingPage() {
           </Link>
         </div>
       </div>
+
+      <Link to="/privacy" className="mt-10 text-xs text-slate-400 underline hover:text-slate-600">
+        {t("landing.privacy")}
+      </Link>
     </div>
   );
 }

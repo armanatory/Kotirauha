@@ -20,7 +20,9 @@ import ResourcesPage from "@/pages/ResourcesPage";
 import ExportPage from "@/pages/ExportPage";
 import ProfilePage from "@/pages/ProfilePage";
 import NotFoundPage from "@/pages/NotFoundPage";
+import PrivacyPage from "@/pages/PrivacyPage";
 import PageTracker from "@/components/PageTracker";
+import CookieNotice from "@/components/CookieNotice";
 
 function Protected({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
@@ -34,9 +36,11 @@ export default function App() {
   return (
     <BrowserRouter>
       <PageTracker />
+      <CookieNotice />
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/install" element={<InstallPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/invite/:token" element={<InvitePage />} />
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
