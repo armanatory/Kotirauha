@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Share, MoreVertical, PlusSquare, Check, Globe, ArrowRight } from "lucide-react";
 import { BRAND } from "@/lib/branding";
+import LanguageToggle from "@/components/LanguageToggle";
 
 type Platform = "ios" | "android" | "other";
 
@@ -62,6 +63,7 @@ export default function InstallPage() {
 
   return (
     <div className="brand-wash min-h-screen px-4 py-10">
+      <LanguageToggle className="absolute top-4 right-4 shadow-sm" />
       <div className="max-w-sm mx-auto">
         <div className="flex justify-center mb-5">
           <img src="/icon.svg" alt={BRAND.name} className="w-16 h-16 rounded-2xl shadow-sm" />

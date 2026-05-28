@@ -615,10 +615,21 @@ const fi = {
   },
 };
 
+// Default to the device language: English browsers get English, everyone else
+// (Finnish and any other locale) falls back to Finnish. A manual choice saved
+// in localStorage always wins.
+function detectLang(): "fi" | "en" {
+  if (typeof navigator !== "undefined") {
+    const primary = (navigator.language || "").toLowerCase();
+    if (primary.startsWith("en")) return "en";
+  }
+  return "fi";
+}
+
 i18n.use(initReactI18next).init({
   resources: { en, fi },
-  lng: localStorage.getItem("lang") ?? "en",
-  fallbackLng: "en",
+  lng: localStorage.getItem("lang") || detectLang(),
+  fallbackLng: "fi",
   interpolation: { escapeValue: false },
 });
 

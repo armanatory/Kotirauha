@@ -2,11 +2,13 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Smartphone, Apple } from "lucide-react";
 import { BRAND } from "@/lib/branding";
+import LanguageToggle from "@/components/LanguageToggle";
 
 export default function LandingPage() {
   const { t } = useTranslation();
   return (
     <div className="brand-wash min-h-screen flex flex-col items-center justify-center px-4 text-center">
+      <LanguageToggle className="absolute top-4 right-4 shadow-sm" />
       <img src="/icon.svg" alt="" className="w-20 h-20 rounded-3xl shadow-md mb-5" />
       <h1 className="text-4xl font-semibold text-slate-800 tracking-tight">{BRAND.name}</h1>
       <p className="mt-3 max-w-md text-slate-600 leading-relaxed">{t("brand.description")}</p>
