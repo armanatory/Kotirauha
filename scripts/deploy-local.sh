@@ -80,6 +80,14 @@ if [ -n "${DRY_RUN:-}" ]; then
   echo; echo "✓ Dry run complete (built, not pushed)."; exit 0
 fi
 
+# Authenticate to GHCR for the push. Uses the PAT from .env.deploy when present
+# (the same account that owns the packages); otherwise relies on an existing
+# `docker login ghcr.io`. The PAT must include the write:packages scope.
+if [ -n "${GHCR_PAT:-}" ]; then
+  echo; echo "▶ Logging in to ${REGISTRY} as ${GHCR_USERNAME}"
+  echo "$GHCR_PAT" | docker login "$REGISTRY" -u "$GHCR_USERNAME" --password-stdin >/dev/null
+fi
+
 echo; echo "▶ Pushing images to ${REGISTRY}…"
 docker push "$IMG_BACKEND"
 docker push "$IMG_FRONTEND"
