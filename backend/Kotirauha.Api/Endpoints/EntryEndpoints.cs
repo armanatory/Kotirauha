@@ -63,6 +63,8 @@ public static class EntryEndpoints
             {
                 if (!file.ContentType.StartsWith("image/"))
                     return Results.Problem("Only image attachments are allowed.", statusCode: 400);
+                if (file.Length > 10 * 1024 * 1024)
+                    return Results.Problem("Image too large (max 10 MB).", statusCode: 400);
                 await using var s = file.OpenReadStream();
                 var key = await store.SaveAsync(s, file.ContentType);
                 db.Attachments.Add(new IncidentAttachment { EntryId = entry.Id, StorageKey = key, ContentType = file.ContentType });
@@ -108,7 +110,7 @@ public static class EntryEndpoints
             if (suggestions.Count > 0)
                 cache.Set(cacheKey, suggestions, TimeSpan.FromMinutes(30));
             return Results.Ok(new { suggestions });
-        });
+        }).RequireRateLimiting("ai");
 
         // --- AI guess of category + location from the typed text ---
         group.MapPost("/classify", async (ClassifyRequest req, HttpContext ctx, KotirauhaDbContext db, ISuggestionProvider suggester) =>
@@ -120,7 +122,7 @@ public static class EntryEndpoints
                 return Results.Ok(new EntryClassification(null, null));
             try { return Results.Ok(await suggester.ClassifyAsync(text)); }
             catch { return Results.Ok(new EntryClassification(null, null)); }
-        });
+        }).RequireRateLimiting("ai");
 
         // --- Timeline list with filters + keyword search ---
         group.MapGet("/", async (HttpContext ctx, KotirauhaDbContext db,
@@ -309,7 +311,7 @@ public static class EntryEndpoints
                 return Results.Ok(new TranslationDto(lang, entry.OriginalText, "none", "completed", false));
             return Results.Ok(new TranslationDto(
                 t.TargetLanguage, t.TranslatedText, t.Provider, t.Status.ToString().ToLowerInvariant(), t.IsMachineGenerated));
-        });
+        }).RequireRateLimiting("ai");
 
         // --- Attachment fetch by attachment id (building-scoped) ---
         group.MapGet("/{id:guid}/attachments/{attachmentId:guid}", async (

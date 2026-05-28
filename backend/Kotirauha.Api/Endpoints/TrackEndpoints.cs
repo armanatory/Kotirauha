@@ -32,7 +32,7 @@ public static class TrackEndpoints
             });
             await db.SaveChangesAsync();
             return Results.Ok();
-        });
+        }).RequireRateLimiting("track");
 
         return api;
     }

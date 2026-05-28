@@ -62,7 +62,7 @@ public static class ExportEndpoints
                     "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "kotirauha-raportti.docx");
             // pdf: printable HTML (the client prints to PDF)
             return Results.Content(BuildReport(m.Building!, me.DisplayName, entries, req, lang), "text/html; charset=utf-8");
-        });
+        }).RequireRateLimiting("export");
 
         return api;
     }

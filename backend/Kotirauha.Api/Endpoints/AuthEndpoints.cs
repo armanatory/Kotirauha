@@ -138,7 +138,7 @@ public static class AuthEndpoints
             return envInfo.IsDevelopment()
                 ? Results.Ok(new { sent = true, devLink = link, devCode = loginCode })
                 : Results.Ok(new { sent = true });
-        });
+        }).RequireRateLimiting("magic-link");
 
         // Exchange a 6-digit code (typed from the email) for a JWT session.
         group.MapPost("/verify-code", async (VerifyCodeRequest req, KotirauhaDbContext db, IJwtTokenService jwt) =>

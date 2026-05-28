@@ -1,7 +1,10 @@
 using System.Text;
+using System.Threading.RateLimiting;
+using Kotirauha.Api.Common;
 using Kotirauha.Api.Endpoints;
 using Kotirauha.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
@@ -46,6 +49,42 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+// Abuse protection. Keys are the real client IP (behind Caddy) or the signed-in
+// user. Limits are generous so normal use is never throttled.
+static string IpKey(HttpContext ctx) => ctx.ClientIp();
+static string UserOrIpKey(HttpContext ctx) =>
+    ctx.User.GetUserId()?.ToString() is { } uid ? $"u:{uid}" : $"ip:{ctx.ClientIp()}";
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    // Backstop against floods, per IP, across the whole API.
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(ctx =>
+        RateLimitPartition.GetFixedWindowLimiter(IpKey(ctx),
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 300, Window = TimeSpan.FromMinutes(1) }));
+
+    // Login emails cost Mailjet credits: tight, per IP.
+    options.AddPolicy("magic-link", ctx =>
+        RateLimitPartition.GetFixedWindowLimiter(IpKey(ctx),
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 8, Window = TimeSpan.FromMinutes(15) }));
+
+    // AI calls cost OpenAI tokens: per user, still roomy for live typing.
+    options.AddPolicy("ai", ctx =>
+        RateLimitPartition.GetFixedWindowLimiter(UserOrIpKey(ctx),
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 40, Window = TimeSpan.FromMinutes(1) }));
+
+    // Anonymous analytics pings, per IP.
+    options.AddPolicy("track", ctx =>
+        RateLimitPartition.GetFixedWindowLimiter(IpKey(ctx),
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 120, Window = TimeSpan.FromMinutes(1) }));
+
+    // Exports, per user, generous daily cap to stop spam.
+    options.AddPolicy("export", ctx =>
+        RateLimitPartition.GetFixedWindowLimiter(UserOrIpKey(ctx),
+            _ => new FixedWindowRateLimiterOptions { PermitLimit = 40, Window = TimeSpan.FromDays(1) }));
+});
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -65,6 +104,7 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.UseCors();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
