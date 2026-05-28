@@ -5,13 +5,14 @@ import { BRAND } from "@/lib/branding";
 export default function AuthLayout() {
   const { t } = useTranslation();
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4">
+    <div className="brand-wash min-h-screen flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <Link to="/" className="block text-center mb-6">
+        <Link to="/" className="flex flex-col items-center mb-6">
+          <img src="/icon.svg" alt="" className="w-14 h-14 rounded-2xl shadow-sm mb-3" />
           <span className="text-2xl font-semibold text-slate-800">{BRAND.name}</span>
-          <p className="text-sm text-slate-500 mt-1">{t("brand.tagline")}</p>
+          <p className="text-sm text-slate-500 mt-1 text-center">{t("brand.tagline")}</p>
         </Link>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
           <Outlet />
         </div>
       </div>

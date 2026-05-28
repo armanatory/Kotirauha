@@ -41,7 +41,7 @@ export default function TimelinePage() {
           <Link to="/export" className="text-sm text-slate-500 underline hover:text-slate-800">
             {t("nav.export")}
           </Link>
-          <Link to="/entries/new" className="bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-slate-700">
+          <Link to="/entries/new" className="bg-teal-700 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-teal-800">
             {t("nav.newEntry")}
           </Link>
         </div>

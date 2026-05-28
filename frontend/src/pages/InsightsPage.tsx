@@ -55,7 +55,7 @@ export default function InsightsPage() {
             <div key={c.category} className="flex items-center gap-2 text-sm">
               <span className="w-40 text-slate-600">{t(`categories.full.${c.category}`)}</span>
               <div className="flex-1 bg-slate-100 rounded h-4">
-                <div className="bg-slate-700 h-4 rounded" style={{ width: `${(c.count / maxCat) * 100}%` }} />
+                <div className="bg-teal-600 h-4 rounded" style={{ width: `${(c.count / maxCat) * 100}%` }} />
               </div>
               <span className="w-8 text-right text-slate-500">{c.count}</span>
             </div>
@@ -68,7 +68,7 @@ export default function InsightsPage() {
         <div className="flex items-end gap-2 h-28">
           {d.byMonth.map((m) => (
             <div key={m.month} className="flex flex-col items-center gap-1 flex-1">
-              <div className="w-full bg-slate-700 rounded-t" style={{ height: `${(m.count / maxMonth) * 100}%` }} />
+              <div className="w-full bg-teal-600 rounded-t" style={{ height: `${(m.count / maxMonth) * 100}%` }} />
               <span className="text-[10px] text-slate-400">{m.month}</span>
             </div>
           ))}

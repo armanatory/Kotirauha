@@ -6,15 +6,16 @@ import { BRAND } from "@/lib/branding";
 export default function LandingPage() {
   const { t } = useTranslation();
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
-      <h1 className="text-4xl font-semibold text-slate-800">{BRAND.name}</h1>
-      <p className="mt-3 max-w-xl text-slate-600">{t("brand.description")}</p>
+    <div className="brand-wash min-h-screen flex flex-col items-center justify-center px-4 text-center">
+      <img src="/icon.svg" alt="" className="w-20 h-20 rounded-3xl shadow-md mb-5" />
+      <h1 className="text-4xl font-semibold text-slate-800 tracking-tight">{BRAND.name}</h1>
+      <p className="mt-3 max-w-md text-slate-600 leading-relaxed">{t("brand.description")}</p>
       <p className="mt-2 text-sm text-slate-400">{t("brand.tagline")}</p>
 
       <div className="mt-8 flex gap-3">
         <Link
           to="/login"
-          className="px-5 py-2.5 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-slate-700"
+          className="px-5 py-2.5 rounded-lg bg-teal-700 text-white text-sm font-medium hover:bg-teal-800"
         >
           {t("landing.login")}
         </Link>

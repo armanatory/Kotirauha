@@ -53,7 +53,7 @@ export default function MagicLinkSent({ email, devLink, devCode, onUseDifferent 
         <button
           type="submit"
           disabled={submitting || code.length < 6}
-          className="bg-slate-900 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
+          className="bg-teal-700 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal-800 disabled:opacity-50"
         >
           {submitting ? t("auth.verifying") : t("auth.verifyCode")}
         </button>

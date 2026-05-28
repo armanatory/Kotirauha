@@ -97,7 +97,7 @@ export default function NewEntryPage() {
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder={t("capture.placeholder")}
-        className="w-full border border-slate-300 rounded-2xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-slate-400"
+        className="w-full border border-slate-300 rounded-2xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-teal-500"
       />
 
       <div className="mt-2 flex items-center gap-2 text-sm text-slate-500">
@@ -123,7 +123,7 @@ export default function NewEntryPage() {
               type="button"
               onClick={() => setCategory(c)}
               className={`flex flex-col items-center gap-1 rounded-2xl py-3 border text-sm transition ${
-                active ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"
+                active ? "bg-teal-700 text-white border-teal-700" : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"
               }`}
             >
               <span className="text-2xl leading-none">{CATEGORY_META[c].emoji}</span>
@@ -145,7 +145,7 @@ export default function NewEntryPage() {
               type="button"
               onClick={() => setLocation(active ? null : l.key)}
               className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-sm transition ${
-                active ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"
+                active ? "bg-teal-700 text-white border-teal-700" : "bg-white text-slate-700 border-slate-200 hover:border-slate-400"
               }`}
             >
               <span>{l.emoji}</span>
@@ -184,7 +184,7 @@ export default function NewEntryPage() {
               <button
                 type="button"
                 onClick={() => setImages((prev) => prev.filter((_, j) => j !== i))}
-                className="absolute -top-2 -right-2 bg-slate-900 text-white rounded-full w-6 h-6 text-xs"
+                className="absolute -top-2 -right-2 bg-teal-700 text-white rounded-full w-6 h-6 text-xs"
                 aria-label={t("capture.removePhoto")}
               >
                 ✕
@@ -216,7 +216,7 @@ export default function NewEntryPage() {
       <button
         type="submit"
         disabled={submitting}
-        className="mt-6 w-full bg-slate-900 text-white rounded-2xl py-3.5 text-base font-semibold shadow-sm hover:bg-slate-700 disabled:opacity-50"
+        className="mt-6 w-full bg-teal-700 text-white rounded-2xl py-3.5 text-base font-semibold shadow-sm hover:bg-teal-800 disabled:opacity-50"
       >
         {submitting ? t("capture.saving") : t("capture.save")}
       </button>

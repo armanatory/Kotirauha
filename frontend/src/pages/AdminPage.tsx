@@ -118,7 +118,7 @@ export default function AdminPage() {
               <li key={u.id} className="py-3">
                 <div className="flex items-center gap-2 mb-2 text-sm">
                   <span className="font-medium text-slate-700 break-all">{u.email}</span>
-                  {u.isAdmin && <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-900 text-white shrink-0">{t("admin.adminBadge")}</span>}
+                  {u.isAdmin && <span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-700 text-white shrink-0">{t("admin.adminBadge")}</span>}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <select
@@ -142,7 +142,7 @@ export default function AdminPage() {
                   </select>
                   <button
                     onClick={() => assign.mutate({ userId: u.id, buildingId: cur.buildingId || null, role: cur.role })}
-                    className="bg-slate-900 text-white rounded-lg px-4 py-1.5 text-sm font-medium hover:bg-slate-700"
+                    className="bg-teal-700 text-white rounded-lg px-4 py-1.5 text-sm font-medium hover:bg-teal-800"
                   >
                     {t("admin.assign")}
                   </button>
@@ -222,7 +222,7 @@ export default function AdminPage() {
           <button
             type="submit"
             disabled={addLink.isPending || !link.title.trim() || !link.url.trim()}
-            className="bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-slate-700 disabled:opacity-50 sm:col-span-2 sm:justify-self-start"
+            className="bg-teal-700 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-teal-800 disabled:opacity-50 sm:col-span-2 sm:justify-self-start"
           >
             {t("admin.addLink")}
           </button>

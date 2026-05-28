@@ -30,7 +30,7 @@ export default function VerifyPage() {
         <>
           <h2 className="text-lg font-semibold text-slate-800">{t("auth.linkExpired")}</h2>
           <p className="text-sm text-slate-500 mt-2">{t("auth.linkExpiredBody")}</p>
-          <Link to="/login" className="inline-block mt-4 bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-medium">
+          <Link to="/login" className="inline-block mt-4 bg-teal-700 text-white rounded-lg px-4 py-2 text-sm font-medium">
             {t("auth.getNewLink")}
           </Link>
         </>

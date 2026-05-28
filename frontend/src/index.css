@@ -10,7 +10,23 @@ html, body, #root {
 
 body {
   margin: 0;
-  background-color: #f6f7f9;
+  /* Soft, calm background with a faint teal tint so the brand colour
+     carries through even on empty space. */
+  background-color: #f1f5f4;
   color: #1f2933;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: #0f766e;
+  color: #ffffff;
+}
+
+/* Calm full-screen wash used by the public pages (landing, auth, install). */
+.brand-wash {
+  background:
+    radial-gradient(1100px 480px at 50% -10%, rgba(13, 148, 136, 0.10), transparent 60%),
+    #f1f5f4;
 }

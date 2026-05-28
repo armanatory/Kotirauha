@@ -50,7 +50,7 @@ export default function LoginPage() {
       <button
         type="submit"
         disabled={submitting}
-        className="bg-slate-900 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
+        className="bg-teal-700 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-teal-800 disabled:opacity-50"
       >
         {submitting ? t("auth.sending") : t("auth.sendLink")}
       </button>

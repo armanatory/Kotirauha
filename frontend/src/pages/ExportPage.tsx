@@ -69,7 +69,7 @@ export default function ExportPage() {
               key={c}
               type="button"
               onClick={() => toggle(c)}
-              className={`px-3 py-1 rounded-full text-xs border ${categories.includes(c) ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-600 border-slate-300"}`}
+              className={`px-3 py-1 rounded-full text-xs border ${categories.includes(c) ? "bg-teal-700 text-white border-teal-700" : "bg-white text-slate-600 border-slate-300"}`}
             >
               {t(`categories.full.${c}`)}
             </button>
@@ -92,7 +92,7 @@ export default function ExportPage() {
       <button
         onClick={generate}
         disabled={busy}
-        className="bg-slate-900 text-white rounded-lg py-2 px-5 text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
+        className="bg-teal-700 text-white rounded-lg py-2 px-5 text-sm font-medium hover:bg-teal-800 disabled:opacity-50"
       >
         {t("exportPage.generate")}
       </button>

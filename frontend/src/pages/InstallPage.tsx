@@ -61,7 +61,7 @@ export default function InstallPage() {
   const steps = STEPS[platform];
 
   return (
-    <div className="min-h-screen px-4 py-10">
+    <div className="brand-wash min-h-screen px-4 py-10">
       <div className="max-w-sm mx-auto">
         <div className="flex justify-center mb-5">
           <img src="/icon.svg" alt={BRAND.name} className="w-16 h-16 rounded-2xl shadow-sm" />

@@ -111,7 +111,7 @@ export default function EntryDetailPage() {
           <div className="space-y-2">
             <textarea rows={5} value={draft} onChange={(ev) => setDraft(ev.target.value)} className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" />
             <div className="flex gap-2">
-              <button onClick={() => save.mutate()} disabled={save.isPending} className="bg-slate-900 text-white rounded-lg px-4 py-1.5 text-sm">{t("entry.save")}</button>
+              <button onClick={() => save.mutate()} disabled={save.isPending} className="bg-teal-700 text-white rounded-lg px-4 py-1.5 text-sm">{t("entry.save")}</button>
               <button onClick={() => setEditing(false)} className="text-sm text-slate-500">{t("entry.cancel")}</button>
             </div>
           </div>

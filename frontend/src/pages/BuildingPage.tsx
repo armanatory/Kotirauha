@@ -108,7 +108,7 @@ function BuildingHome({ building, onChanged }: { building: BuildingDto; onChange
             <button
               type="submit"
               disabled={setCode.isPending || !customCode.trim()}
-              className="bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
+              className="bg-teal-700 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-teal-800 disabled:opacity-50"
             >
               {t("building.setCode")}
             </button>
@@ -173,13 +173,13 @@ function CreateOrJoin({ onDone }: { onDone: () => void }) {
       <div className="flex gap-2 mb-4">
         <button
           onClick={() => setTab("create")}
-          className={`px-3 py-1.5 rounded-lg text-sm ${tab === "create" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}
+          className={`px-3 py-1.5 rounded-lg text-sm ${tab === "create" ? "bg-teal-700 text-white" : "bg-slate-100 text-slate-600"}`}
         >
           {t("building.create")}
         </button>
         <button
           onClick={() => setTab("join")}
-          className={`px-3 py-1.5 rounded-lg text-sm ${tab === "join" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}
+          className={`px-3 py-1.5 rounded-lg text-sm ${tab === "join" ? "bg-teal-700 text-white" : "bg-slate-100 text-slate-600"}`}
         >
           {t("building.join")}
         </button>
@@ -240,7 +240,7 @@ function Submit({ pending, children }: { pending: boolean; children: React.React
     <button
       type="submit"
       disabled={pending}
-      className="bg-slate-900 text-white rounded-lg py-2 text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
+      className="bg-teal-700 text-white rounded-lg py-2 text-sm font-medium hover:bg-teal-800 disabled:opacity-50"
     >
       {children}
     </button>
