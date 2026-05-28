@@ -63,8 +63,9 @@ export default function ExportPage() {
         a.remove();
         setTimeout(() => URL.revokeObjectURL(url), 5000);
       }
-    } catch {
-      toast.error(t("exportPage.couldNotGenerate"));
+    } catch (err) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      toast.error(status === 429 ? t("exportPage.tooMany") : t("exportPage.couldNotGenerate"));
     } finally {
       setBusy(false);
     }

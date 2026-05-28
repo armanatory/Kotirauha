@@ -343,6 +343,7 @@ const en = {
       close: "Close",
       joinFirst: "Join a building first.",
       couldNotGenerate: "Could not generate the report.",
+      tooMany: "You've made many exports today. Please try again later.",
     },
     insights: {
       title: "Insights",
@@ -778,6 +779,7 @@ const fi = {
       close: "Sulje",
       joinFirst: "Liity ensin taloyhtiöön.",
       couldNotGenerate: "Raportin luonti epäonnistui.",
+      tooMany: "Olet tehnyt useita vientejä tänään. Yritä myöhemmin uudelleen.",
     },
     insights: {
       title: "Tilastot",

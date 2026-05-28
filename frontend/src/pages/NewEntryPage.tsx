@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
+import { compressImage } from "@/lib/image";
 import { useAuth } from "@/auth/AuthContext";
 import { CATEGORIES, CATEGORY_META, LANGUAGES, type Category } from "@/api/types";
 
@@ -86,9 +87,10 @@ export default function NewEntryPage() {
     );
   }
 
-  function addImages(files: FileList | null) {
+  async function addImages(files: FileList | null) {
     if (!files) return;
-    setImages((prev) => [...prev, ...Array.from(files)]);
+    const compressed = await Promise.all(Array.from(files).map(compressImage));
+    setImages((prev) => [...prev, ...compressed]);
   }
 
   function resolveSubject(): string | undefined {
@@ -125,7 +127,7 @@ export default function NewEntryPage() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-md mx-auto pb-28">
+    <form onSubmit={handleSubmit} className="max-w-md mx-auto pb-44 md:pb-28">
       <h1 className="text-2xl font-semibold text-slate-800">{t("capture.title")}</h1>
       <p className="text-sm text-slate-500 mt-1 mb-4">{t("capture.intro")}</p>
 
@@ -244,11 +246,11 @@ export default function NewEntryPage() {
       <div className="flex gap-2">
         <label className="flex-1 inline-flex items-center justify-center gap-2 cursor-pointer rounded-xl border border-slate-300 px-3 py-3 text-slate-700">
           <span>📷</span><span>{t("capture.takePhoto")}</span>
-          <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => addImages(e.target.files)} />
+          <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => void addImages(e.target.files)} />
         </label>
         <label className="flex-1 inline-flex items-center justify-center gap-2 cursor-pointer rounded-xl border border-slate-300 px-3 py-3 text-slate-700">
           <span>🖼️</span><span>{t("capture.gallery")}</span>
-          <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => addImages(e.target.files)} />
+          <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => void addImages(e.target.files)} />
         </label>
       </div>
       {images.length > 0 && (
@@ -279,14 +281,18 @@ export default function NewEntryPage() {
         />
       </label>
 
-      <div className="sticky bottom-20 md:bottom-2 z-10 mt-6 -mx-1 px-1 pt-3 pb-1 bg-gradient-to-t from-white via-white/95 to-transparent">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="w-full bg-teal-700 text-white rounded-2xl py-3.5 text-base font-semibold shadow-lg hover:bg-teal-800 disabled:opacity-50"
-        >
-          {submitting ? t("capture.saving") : t("capture.save")}
-        </button>
+      {/* Always-visible action bar so the Save button is never hidden below the
+          fold (it floats above the mobile nav / beside the desktop sidebar). */}
+      <div className="fixed left-0 right-0 z-40 px-4 md:left-60 md:px-6 bottom-[calc(env(safe-area-inset-bottom)+64px)] md:bottom-4 pointer-events-none">
+        <div className="max-w-md mx-auto">
+          <button
+            type="submit"
+            disabled={submitting}
+            className="pointer-events-auto w-full bg-teal-700 text-white rounded-2xl py-3.5 text-base font-semibold shadow-xl ring-1 ring-black/5 hover:bg-teal-800 disabled:opacity-50"
+          >
+            {submitting ? t("capture.saving") : t("capture.save")}
+          </button>
+        </div>
       </div>
     </form>
   );
