@@ -107,63 +107,50 @@ export default function AdminPage() {
         </section>
       )}
 
-      {/* Users + assign to building */}
-      <section className="bg-white border border-slate-200 rounded-xl p-4 overflow-x-auto">
+      {/* Users + assign to building (card list, wraps on phones) */}
+      <section className="bg-white border border-slate-200 rounded-xl p-4">
         <h2 className="text-sm font-semibold text-slate-700 mb-3">{t("admin.usersTitle")}</h2>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-slate-400 text-xs">
-              <th className="py-1">{t("admin.colEmail")}</th>
-              <th>{t("admin.colBuilding")}</th>
-              <th>{t("admin.colRole")}</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {usersQ.data?.map((u) => {
-              const cur = pending[u.id] ?? { buildingId: u.buildingId ?? "", role: u.role ?? "resident" };
-              const set = (patch: Partial<typeof cur>) => setPending((p) => ({ ...p, [u.id]: { ...cur, ...patch } }));
-              return (
-                <tr key={u.id} className="border-t border-slate-100 align-middle">
-                  <td className="py-2 text-slate-700">
-                    {u.email}{u.isAdmin && <span className="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-slate-900 text-white">{t("admin.adminBadge")}</span>}
-                  </td>
-                  <td>
-                    <select
-                      value={cur.buildingId}
-                      onChange={(e) => set({ buildingId: e.target.value })}
-                      className="border border-slate-300 rounded-lg px-2 py-1 text-sm"
-                    >
-                      <option value="">{t("admin.noBuilding")}</option>
-                      {buildingsQ.data?.map((b) => (
-                        <option key={b.id} value={b.id}>{b.name}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td>
-                    <select
-                      value={cur.role}
-                      onChange={(e) => set({ role: e.target.value })}
-                      disabled={!cur.buildingId}
-                      className="border border-slate-300 rounded-lg px-2 py-1 text-sm disabled:opacity-50"
-                    >
-                      <option value="resident">{t("roles.resident")}</option>
-                      <option value="board">{t("roles.board")}</option>
-                    </select>
-                  </td>
-                  <td className="text-right">
-                    <button
-                      onClick={() => assign.mutate({ userId: u.id, buildingId: cur.buildingId || null, role: cur.role })}
-                      className="text-sm text-slate-700 underline hover:text-slate-900"
-                    >
-                      {t("admin.assign")}
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+        <ul className="divide-y divide-slate-100">
+          {usersQ.data?.map((u) => {
+            const cur = pending[u.id] ?? { buildingId: u.buildingId ?? "", role: u.role ?? "resident" };
+            const set = (patch: Partial<typeof cur>) => setPending((p) => ({ ...p, [u.id]: { ...cur, ...patch } }));
+            return (
+              <li key={u.id} className="py-3">
+                <div className="flex items-center gap-2 mb-2 text-sm">
+                  <span className="font-medium text-slate-700 break-all">{u.email}</span>
+                  {u.isAdmin && <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-900 text-white shrink-0">{t("admin.adminBadge")}</span>}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <select
+                    value={cur.buildingId}
+                    onChange={(e) => set({ buildingId: e.target.value })}
+                    className="border border-slate-300 rounded-lg px-2 py-1.5 text-sm flex-1 min-w-40"
+                  >
+                    <option value="">{t("admin.noBuilding")}</option>
+                    {buildingsQ.data?.map((b) => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={cur.role}
+                    onChange={(e) => set({ role: e.target.value })}
+                    disabled={!cur.buildingId}
+                    className="border border-slate-300 rounded-lg px-2 py-1.5 text-sm disabled:opacity-50"
+                  >
+                    <option value="resident">{t("roles.resident")}</option>
+                    <option value="board">{t("roles.board")}</option>
+                  </select>
+                  <button
+                    onClick={() => assign.mutate({ userId: u.id, buildingId: cur.buildingId || null, role: cur.role })}
+                    className="bg-slate-900 text-white rounded-lg px-4 py-1.5 text-sm font-medium hover:bg-slate-700"
+                  >
+                    {t("admin.assign")}
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       </section>
 
       {/* Buildings */}
