@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { useAuth } from "@/auth/AuthContext";
+import AuthImage from "@/components/AuthImage";
 import type { EntryDetail } from "@/api/types";
 
 export default function EntryDetailPage() {
@@ -154,10 +155,9 @@ export default function EntryDetailPage() {
           </div>
           <div className="flex flex-wrap gap-3">
             {e.attachmentIds.map((aid) => (
-              <img
+              <AuthImage
                 key={aid}
-                src={`/api/v1/entries/${e.id}/attachments/${aid}`}
-                alt=""
+                src={`/entries/${e.id}/attachments/${aid}`}
                 className="max-h-80 rounded-lg border border-slate-200"
               />
             ))}

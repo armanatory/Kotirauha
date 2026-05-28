@@ -29,7 +29,6 @@ export default function NewEntryPage() {
   const [apartment, setApartment] = useState("");
   const [occurredAt, setOccurredAt] = useState(localNow());
   const [images, setImages] = useState<File[]>([]);
-  const [showDetails, setShowDetails] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -194,24 +193,15 @@ export default function NewEntryPage() {
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={() => setShowDetails((v) => !v)}
-        className="mt-5 text-sm text-slate-500 underline"
-      >
-        {showDetails ? t("capture.hide") : t("capture.changeTime")}
-      </button>
-      {showDetails && (
-        <label className="flex flex-col gap-1 text-sm mt-3">
-          <span className="text-slate-600">{t("capture.whenHappened")}</span>
-          <input
-            type="datetime-local"
-            value={occurredAt}
-            onChange={(e) => setOccurredAt(e.target.value)}
-            className="border border-slate-300 rounded-xl px-3 py-2"
-          />
-        </label>
-      )}
+      <label className="flex flex-col gap-1 text-sm mt-5">
+        <span className="text-slate-600">{t("capture.whenHappened")}</span>
+        <input
+          type="datetime-local"
+          value={occurredAt}
+          onChange={(e) => setOccurredAt(e.target.value)}
+          className="border border-slate-300 rounded-xl px-3 py-2"
+        />
+      </label>
 
       <button
         type="submit"
