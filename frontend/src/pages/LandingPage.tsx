@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Smartphone, Apple } from "lucide-react";
 import { BRAND } from "@/lib/branding";
 import LanguageToggle from "@/components/LanguageToggle";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 
 export default function LandingPage() {
   const { t } = useTranslation();
@@ -27,6 +28,10 @@ export default function LandingPage() {
         >
           {t("landing.createAccount")}
         </Link>
+      </div>
+
+      <div className="mt-4">
+        <GoogleSignInButton />
       </div>
 
       <div className="mt-10 w-full max-w-xs">
