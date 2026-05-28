@@ -47,6 +47,10 @@ services:
       APP_BASE_URL: ${APP_BASE_URL:-}
       # Platform admin(s) — comma-separated emails (the owner is always admin).
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      # Google sign-in (optional). When set, the frontend shows the Google button.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      # Offline country lookup for analytics (optional path to a GeoLite2 .mmdb).
+      GEOIP_DB_PATH: ${GEOIP_DB_PATH:-}
     volumes:
       - media:/var/kotirauha/media
     ports:

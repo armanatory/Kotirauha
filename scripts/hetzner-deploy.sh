@@ -81,6 +81,7 @@ sync_env_key MAILJET_API_SECRET "${MAILJET_API_SECRET:-}"
 sync_env_key MAILJET_FROM_EMAIL "${MAILJET_FROM_EMAIL:-}"
 sync_env_key MAILJET_FROM_NAME  "${MAILJET_FROM_NAME:-}"
 sync_env_key ADMIN_EMAIL        "${ADMIN_EMAIL:-}"
+sync_env_key GOOGLE_CLIENT_ID   "${GOOGLE_CLIENT_ID:-}"
 
 # ── GHCR auth + pull + roll ──
 if [ -n "${GHCR_PAT:-}" ]; then

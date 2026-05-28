@@ -23,7 +23,7 @@
 #   Provider secrets forwarded into /srv/kotirauha/.env (optional):
 #     OPENAI_API_KEY OPENAI_MODEL ANTHROPIC_API_KEY ANTHROPIC_MODEL
 #     MAILJET_API_KEY MAILJET_API_SECRET MAILJET_FROM_EMAIL MAILJET_FROM_NAME
-#     ADMIN_EMAIL
+#     ADMIN_EMAIL GOOGLE_CLIENT_ID
 
 set -euo pipefail
 SECONDS=0
@@ -121,6 +121,7 @@ add_forward MAILJET_API_SECRET "${MAILJET_API_SECRET:-}"
 add_forward MAILJET_FROM_EMAIL "${MAILJET_FROM_EMAIL:-}"
 add_forward MAILJET_FROM_NAME  "${MAILJET_FROM_NAME:-}"
 add_forward ADMIN_EMAIL        "${ADMIN_EMAIL:-}"
+add_forward GOOGLE_CLIENT_ID   "${GOOGLE_CLIENT_ID:-}"
 
 if [ "${#FORWARDED[@]}" -gt 0 ]; then
   echo "  → forwarding to .env on server: ${FORWARDED[*]}"
