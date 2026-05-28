@@ -36,6 +36,7 @@ export default function BuildingPage() {
 function BuildingHome({ building, onChanged }: { building: BuildingDto; onChanged: () => void }) {
   const { t } = useTranslation();
   const isBoard = building.role === "board" || building.role === "admin";
+  const [customCode, setCustomCode] = useState("");
 
   const membersQ = useQuery({
     queryKey: ["members"],
@@ -44,10 +45,23 @@ function BuildingHome({ building, onChanged }: { building: BuildingDto; onChange
   });
 
   const regen = useMutation({
-    mutationFn: async () => (await api.post<{ joinCode: string }>("/buildings/join-code")).data,
+    mutationFn: async () => (await api.post<{ joinCode: string }>("/buildings/join-code", {})).data,
     onSuccess: () => {
       toast.success(t("building.toastCodeRegenerated"));
       onChanged();
+    },
+  });
+
+  const setCode = useMutation({
+    mutationFn: async (code: string) => (await api.post<{ joinCode: string }>("/buildings/join-code", { code })).data,
+    onSuccess: () => {
+      toast.success(t("building.toastCodeSet"));
+      setCustomCode("");
+      onChanged();
+    },
+    onError: (err: unknown) => {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      toast.error(status === 409 ? t("building.toastCodeTaken") : t("building.toastCodeInvalid"));
     },
   });
 
@@ -77,6 +91,29 @@ function BuildingHome({ building, onChanged }: { building: BuildingDto; onChange
             </button>
           </div>
           <p className="text-xs text-slate-400 mt-2">{t("building.shareCode")}</p>
+
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (customCode.trim()) setCode.mutate(customCode);
+            }}
+            className="mt-3 flex flex-col gap-1.5 sm:flex-row sm:items-center"
+          >
+            <input
+              value={customCode}
+              onChange={(e) => setCustomCode(e.target.value)}
+              placeholder={t("building.customCodePlaceholder")}
+              className="border border-slate-300 rounded-lg px-3 py-2 text-sm uppercase flex-1"
+            />
+            <button
+              type="submit"
+              disabled={setCode.isPending || !customCode.trim()}
+              className="bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-medium hover:bg-slate-700 disabled:opacity-50"
+            >
+              {t("building.setCode")}
+            </button>
+          </form>
+          <p className="text-xs text-slate-400 mt-2">{t("building.customCodeHint")}</p>
         </section>
       )}
 

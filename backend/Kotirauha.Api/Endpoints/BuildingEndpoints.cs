@@ -8,6 +8,7 @@ namespace Kotirauha.Api.Endpoints;
 
 public record CreateBuildingRequest(string Name, string? Address, string? SharedLanguage, string? ApartmentNumber);
 public record JoinBuildingRequest(string JoinCode, string? ApartmentNumber);
+public record SetJoinCodeRequest(string? Code);
 public record BuildingDto(Guid Id, string Name, string? Address, string SharedLanguage, string Role, string? JoinCode);
 public record MemberDto(Guid UserId, string DisplayName, string Role, string? ApartmentNumber);
 
@@ -54,7 +55,7 @@ public static class BuildingEndpoints
             if (await db.Memberships.AnyAsync(m => m.UserId == userId))
                 return Results.Problem("You already belong to a building.", statusCode: 409);
 
-            var code = req.JoinCode.Trim().ToUpperInvariant();
+            var code = NormalizeCode(req.JoinCode);
             var building = await db.Buildings.FirstOrDefaultAsync(b => b.JoinCode == code);
             if (building is null) return Results.Problem("Invalid join code.", statusCode: 404);
 
@@ -103,7 +104,8 @@ public static class BuildingEndpoints
             return Results.Ok(members);
         });
 
-        group.MapPost("/join-code", async (HttpContext ctx, KotirauhaDbContext db) =>
+        // Set a custom join code (if `code` provided) or regenerate a random one.
+        group.MapPost("/join-code", async (SetJoinCodeRequest? req, HttpContext ctx, KotirauhaDbContext db) =>
         {
             var userId = ctx.User.GetUserId();
             if (userId is null) return Results.Unauthorized();
@@ -111,13 +113,31 @@ public static class BuildingEndpoints
             if (m is null || m.Role is MembershipRole.Resident)
                 return Results.Problem("Board access required.", statusCode: 403);
 
-            m.Building!.JoinCode = await GenerateUniqueJoinCodeAsync(db);
+            if (!string.IsNullOrWhiteSpace(req?.Code))
+            {
+                var code = NormalizeCode(req.Code);
+                if (code.Length is < 4 or > 32 || !code.All(c => char.IsLetterOrDigit(c) || c == '-'))
+                    return Results.Problem("Code must be 4 to 32 letters, numbers or dashes.", statusCode: 400);
+                if (await db.Buildings.AnyAsync(b => b.JoinCode == code && b.Id != m.BuildingId))
+                    return Results.Problem("That code is already taken. Try another.", statusCode: 409);
+                m.Building!.JoinCode = code;
+            }
+            else
+            {
+                m.Building!.JoinCode = await GenerateUniqueJoinCodeAsync(db);
+            }
+
             await db.SaveChangesAsync();
             return Results.Ok(new { joinCode = m.Building!.JoinCode });
         });
 
         return api;
     }
+
+    // Codes are matched case- and whitespace-insensitively so they are easy to
+    // share and type. Stored normalized (uppercase, no spaces).
+    private static string NormalizeCode(string raw) =>
+        new string(raw.Where(ch => !char.IsWhiteSpace(ch)).ToArray()).ToUpperInvariant();
 
     private static async Task<string> GenerateUniqueJoinCodeAsync(KotirauhaDbContext db)
     {
