@@ -327,7 +327,7 @@ const en = {
     exportPage: {
       title: "Export report",
       intro:
-        "Generate a neutral, printable record. It opens in a new tab. Use your browser's Print, then Save as PDF.",
+        "Generate a neutral record. Preview and print or save it as PDF, or download it as Excel or Word.",
       from: "From",
       to: "To",
       categories: "Categories",
@@ -762,7 +762,7 @@ const fi = {
     exportPage: {
       title: "Vie raportti",
       intro:
-        "Luo puolueeton, tulostettava raportti. Se avautuu uuteen välilehteen. Käytä selaimen tulostusta ja tallenna PDF-muotoon.",
+        "Luo puolueeton kirjaus. Esikatsele ja tulosta tai tallenna se PDF-muodossa, tai lataa Excel- tai Word-tiedostona.",
       from: "Alkaen",
       to: "Asti",
       categories: "Luokat",
