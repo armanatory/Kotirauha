@@ -4,12 +4,14 @@ using Kotirauha.Api.Common;
 using Kotirauha.Core.Abstractions;
 using Kotirauha.Core.Domain;
 using Kotirauha.Infrastructure;
+using Kotirauha.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kotirauha.Api.Endpoints;
 
 public record MagicLinkRequest(string Email, string? DisplayName, string? PreferredLanguage);
 public record VerifyRequest(string Token);
+public record VerifyCodeRequest(string Email, string Code);
 public record VerifyResponse(string Token, bool ProfileComplete);
 public record UpdateProfileRequest(string? DisplayName, string? PreferredLanguage);
 
@@ -48,37 +50,78 @@ public static class AuthEndpoints
             // Project owner / configured operators are platform admins.
             if (AdminConfig.IsAdminEmail(address) && !user.IsPlatformAdmin) user.IsPlatformAdmin = true;
 
+            // Invalidate earlier unused codes/links for this email so only the
+            // newest email works (latest-wins, like a typical OTP).
+            var now = DateTimeOffset.UtcNow;
+            await db.MagicLinkTokens
+                .Where(t => t.Email == address && t.UsedAt == null)
+                .ExecuteUpdateAsync(s => s.SetProperty(t => t.UsedAt, now));
+
             var rawToken = Base64Url(RandomNumberGenerator.GetBytes(32));
+            var loginCode = GenerateNumericCode(6);
             db.MagicLinkTokens.Add(new MagicLinkToken
             {
                 Email = address,
                 TokenHash = Sha256(rawToken),
-                ExpiresAt = DateTimeOffset.UtcNow.AddMinutes(20),
+                CodeHash = Sha256(loginCode),
+                ExpiresAt = now.AddMinutes(20),
             });
             await db.SaveChangesAsync();
 
             var appBase = (Environment.GetEnvironmentVariable("APP_BASE_URL") ?? "http://localhost:5173").TrimEnd('/');
             var link = $"{appBase}/auth/verify?token={rawToken}";
 
+            var (subject, htmlBody, textBody) = EmailTemplates.RenderMagicLink(link, loginCode, user.PreferredLanguage);
             try
             {
-                await email.SendAsync(
-                    address,
-                    "Your Kotirauha login link",
-                    $"<p>Tap the button to sign in to Kotirauha. The link works once and expires in 20 minutes.</p>" +
-                    $"<p><a href=\"{link}\">Sign in to Kotirauha</a></p>" +
-                    $"<p>If you did not request this, you can ignore this email.</p>",
-                    $"Sign in to Kotirauha (link works once, expires in 20 minutes):\n{link}");
+                await email.SendAsync(address, subject, htmlBody, textBody);
             }
             catch
             {
-                // Never reveal send failures to the caller; the link is still valid.
+                // Never reveal send failures to the caller; the link/code are still valid.
             }
 
-            // In development we return the link so the flow is testable without an inbox.
+            // In development we return the link + code so the flow is testable without an inbox.
             return envInfo.IsDevelopment()
-                ? Results.Ok(new { sent = true, devLink = link })
+                ? Results.Ok(new { sent = true, devLink = link, devCode = loginCode })
                 : Results.Ok(new { sent = true });
+        });
+
+        // Exchange a 6-digit code (typed from the email) for a JWT session.
+        group.MapPost("/verify-code", async (VerifyCodeRequest req, KotirauhaDbContext db, IJwtTokenService jwt) =>
+        {
+            var address = req.Email?.Trim().ToLowerInvariant();
+            var raw = new string((req.Code ?? "").Where(char.IsDigit).ToArray());
+            if (string.IsNullOrWhiteSpace(address) || raw.Length < 4)
+                return Results.Problem("Enter the code from your email.", statusCode: 400);
+
+            var now = DateTimeOffset.UtcNow;
+            var row = await db.MagicLinkTokens
+                .Where(t => t.Email == address && t.UsedAt == null && t.ExpiresAt > now)
+                .OrderByDescending(t => t.CreatedAt)
+                .FirstOrDefaultAsync();
+            if (row is null) return Results.Problem("This code is invalid or has expired.", statusCode: 400);
+
+            if (row.Attempts >= 8)
+            {
+                row.UsedAt = now;
+                await db.SaveChangesAsync();
+                return Results.Problem("Too many attempts. Request a new code.", statusCode: 429);
+            }
+            if (Sha256(raw) != row.CodeHash)
+            {
+                row.Attempts++;
+                await db.SaveChangesAsync();
+                return Results.Problem("Incorrect code.", statusCode: 400);
+            }
+
+            row.UsedAt = now;
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Email == address);
+            if (user is null) return Results.Problem("Account not found.", statusCode: 400);
+            if (!user.IsActive) return Results.Problem("This account is deactivated.", statusCode: 403);
+            await db.SaveChangesAsync();
+
+            return Results.Ok(new VerifyResponse(jwt.CreateToken(user), !string.IsNullOrWhiteSpace(user.DisplayName)));
         });
 
         // Exchange a magic-link token for a JWT session.
@@ -152,4 +195,19 @@ public static class AuthEndpoints
 
     private static string Base64Url(byte[] bytes) =>
         Convert.ToBase64String(bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+    // Cryptographically-random N-digit code. Rejection sampling keeps the
+    // digit distribution flat (no modulo bias).
+    private static string GenerateNumericCode(int digits)
+    {
+        var sb = new StringBuilder(digits);
+        Span<byte> buf = stackalloc byte[1];
+        while (sb.Length < digits)
+        {
+            RandomNumberGenerator.Fill(buf);
+            if (buf[0] >= 250) continue;
+            sb.Append((char)('0' + (buf[0] % 10)));
+        }
+        return sb.ToString();
+    }
 }

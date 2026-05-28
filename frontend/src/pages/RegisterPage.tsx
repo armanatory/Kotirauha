@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useAuth } from "@/auth/AuthContext";
 import { LANGUAGES } from "@/api/types";
+import MagicLinkSent from "@/auth/MagicLinkSent";
 
 export default function RegisterPage() {
   const { t, i18n } = useTranslation();
@@ -14,13 +15,15 @@ export default function RegisterPage() {
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
   const [devLink, setDevLink] = useState<string | null>(null);
+  const [devCode, setDevCode] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const { devLink } = await requestMagicLink({ email, displayName, preferredLanguage: language });
+      const { devLink, devCode } = await requestMagicLink({ email, displayName, preferredLanguage: language });
       setDevLink(devLink ?? null);
+      setDevCode(devCode ?? null);
       setSent(true);
     } catch {
       toast.error(t("auth.couldNotSend"));
@@ -30,17 +33,7 @@ export default function RegisterPage() {
   }
 
   if (sent) {
-    return (
-      <div className="text-center">
-        <h2 className="text-lg font-semibold text-slate-800">{t("auth.checkEmail")}</h2>
-        <p className="text-sm text-slate-500 mt-2">{t("auth.checkEmailRegister", { email })}</p>
-        {devLink && (
-          <a href={devLink} className="inline-block mt-4 bg-slate-900 text-white rounded-lg px-4 py-2 text-sm font-medium">
-            {t("auth.openLinkDev")}
-          </a>
-        )}
-      </div>
-    );
+    return <MagicLinkSent email={email} devLink={devLink} devCode={devCode} onUseDifferent={() => setSent(false)} />;
   }
 
   return (

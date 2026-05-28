@@ -35,7 +35,9 @@ public class KotirauhaDbContext : DbContext
         {
             e.Property(x => x.Email).HasMaxLength(256).IsRequired();
             e.Property(x => x.TokenHash).HasMaxLength(128).IsRequired();
+            e.Property(x => x.CodeHash).HasMaxLength(128);
             e.HasIndex(x => x.TokenHash);
+            e.HasIndex(x => x.Email);
         });
 
         b.Entity<Building>(e =>

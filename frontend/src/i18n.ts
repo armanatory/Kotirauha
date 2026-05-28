@@ -85,10 +85,12 @@ const en = {
       loginIntro: "Enter your email and we will send you a login link.",
       registerIntro: "No password needed. We will email you a login link.",
       checkEmail: "Check your email",
-      checkEmailLogin:
-        "We sent a login link to {{email}}. Open it on this device to sign in. The link works once and expires in 20 minutes.",
-      checkEmailRegister:
-        "We sent a login link to {{email}}. Open it on this device to finish signing up.",
+      checkEmailBoth:
+        "We sent a 6-digit code and a login link to {{email}}. Enter the code below, or open the link. Both expire in 20 minutes.",
+      codePlaceholder: "6-digit code",
+      verifyCode: "Sign in",
+      verifying: "Signing in…",
+      invalidCode: "Incorrect or expired code.",
       openLinkDev: "Open login link (dev)",
       useDifferentEmail: "Use a different email",
       newHere: "New here?",
@@ -390,10 +392,12 @@ const fi = {
       loginIntro: "Anna sähköpostisi, niin lähetämme sinulle kirjautumislinkin.",
       registerIntro: "Salasanaa ei tarvita. Lähetämme kirjautumislinkin sähköpostiisi.",
       checkEmail: "Tarkista sähköpostisi",
-      checkEmailLogin:
-        "Lähetimme kirjautumislinkin osoitteeseen {{email}}. Avaa se tällä laitteella kirjautuaksesi. Linkki toimii kerran ja vanhenee 20 minuutissa.",
-      checkEmailRegister:
-        "Lähetimme kirjautumislinkin osoitteeseen {{email}}. Avaa se tällä laitteella viimeistelläksesi rekisteröitymisen.",
+      checkEmailBoth:
+        "Lähetimme 6-numeroisen koodin ja kirjautumislinkin osoitteeseen {{email}}. Syötä koodi alle tai avaa linkki. Molemmat vanhenevat 20 minuutissa.",
+      codePlaceholder: "6-numeroinen koodi",
+      verifyCode: "Kirjaudu",
+      verifying: "Kirjaudutaan…",
+      invalidCode: "Virheellinen tai vanhentunut koodi.",
       openLinkDev: "Avaa kirjautumislinkki (dev)",
       useDifferentEmail: "Käytä toista sähköpostia",
       newHere: "Ensimmäistä kertaa täällä?",

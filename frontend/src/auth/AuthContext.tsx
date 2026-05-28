@@ -28,8 +28,9 @@ interface MagicLinkInput {
 interface AuthState {
   user: CurrentUser | null;
   loading: boolean;
-  requestMagicLink: (input: MagicLinkInput) => Promise<{ devLink?: string }>;
+  requestMagicLink: (input: MagicLinkInput) => Promise<{ devLink?: string; devCode?: string }>;
   verify: (token: string) => Promise<{ profileComplete: boolean }>;
+  verifyCode: (email: string, code: string) => Promise<{ profileComplete: boolean }>;
   updateProfile: (input: { displayName?: string; preferredLanguage?: string }) => Promise<void>;
   logout: () => void;
   refresh: () => Promise<void>;
@@ -66,12 +67,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function requestMagicLink(input: MagicLinkInput) {
-    const { data } = await api.post<{ sent: boolean; devLink?: string }>("/auth/magic-link", input);
-    return { devLink: data.devLink };
+    const { data } = await api.post<{ sent: boolean; devLink?: string; devCode?: string }>("/auth/magic-link", input);
+    return { devLink: data.devLink, devCode: data.devCode };
   }
 
   async function verify(token: string) {
     const { data } = await api.post<{ token: string; profileComplete: boolean }>("/auth/verify", { token });
+    setToken(data.token);
+    await refresh();
+    return { profileComplete: data.profileComplete };
+  }
+
+  async function verifyCode(email: string, code: string) {
+    const { data } = await api.post<{ token: string; profileComplete: boolean }>("/auth/verify-code", { email, code });
     setToken(data.token);
     await refresh();
     return { profileComplete: data.profileComplete };
@@ -88,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, requestMagicLink, verify, updateProfile, logout, refresh }}>
+    <AuthContext.Provider value={{ user, loading, requestMagicLink, verify, verifyCode, updateProfile, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );
