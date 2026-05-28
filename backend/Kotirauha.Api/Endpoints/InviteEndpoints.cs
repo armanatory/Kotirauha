@@ -57,6 +57,8 @@ public static class InviteEndpoints
                 BuildingId = invite.BuildingId,
                 Role = MembershipRole.Resident,
                 ApartmentNumber = string.IsNullOrWhiteSpace(req?.ApartmentNumber) ? null : req.ApartmentNumber.Trim(),
+                JoinedVia = "invite",
+                InviteId = invite.Id,
             });
             invite.UsedCount++;
             await db.SaveChangesAsync();

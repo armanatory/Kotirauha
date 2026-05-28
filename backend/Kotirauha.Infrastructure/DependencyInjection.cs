@@ -49,20 +49,28 @@ public static class DependencyInjection
         var explicitProvider = Environment.GetEnvironmentVariable("TRANSLATION_PROVIDER")?.ToLowerInvariant();
         var openAiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
         var anthropicKey = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY");
+        var hasOpenAi = !string.IsNullOrWhiteSpace(openAiKey);
+        var hasAnthropic = !string.IsNullOrWhiteSpace(anthropicKey);
 
-        // Priority: explicit choice, then whichever key is present, then offline stub.
-        var provider = explicitProvider
-            ?? (!string.IsNullOrWhiteSpace(openAiKey) ? "openai"
-                : !string.IsNullOrWhiteSpace(anthropicKey) ? "anthropic"
-                : "stub");
+        // Honour an explicit choice only when its key is actually present;
+        // otherwise auto-detect from whichever key exists. This avoids silently
+        // falling back to the stub when e.g. TRANSLATION_PROVIDER=anthropic is set
+        // but only OPENAI_API_KEY is configured.
+        var provider =
+            explicitProvider == "openai" && hasOpenAi ? "openai"
+            : explicitProvider == "anthropic" && hasAnthropic ? "anthropic"
+            : explicitProvider == "stub" ? "stub"
+            : hasOpenAi ? "openai"
+            : hasAnthropic ? "anthropic"
+            : "stub";
 
-        if (provider == "openai" && !string.IsNullOrWhiteSpace(openAiKey))
+        if (provider == "openai" && hasOpenAi)
         {
             var model = Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-4o-mini";
             services.AddSingleton<ITranslationProvider>(sp =>
                 new OpenAiTranslationProvider(sp.GetRequiredService<IHttpClientFactory>().CreateClient(), openAiKey!, model));
         }
-        else if (provider == "anthropic" && !string.IsNullOrWhiteSpace(anthropicKey))
+        else if (provider == "anthropic" && hasAnthropic)
         {
             var model = Environment.GetEnvironmentVariable("ANTHROPIC_MODEL") ?? "claude-sonnet-4-6";
             services.AddSingleton<ITranslationProvider>(sp =>

@@ -8,11 +8,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kotirauha.Api.Endpoints;
 
-public record CreateBuildingRequest(string Name, string? Address, string? SharedLanguage, string? ApartmentNumber);
 public record JoinBuildingRequest(string JoinCode, string? ApartmentNumber);
 public record SetJoinCodeRequest(string? Code);
 public record BuildingDto(Guid Id, string Name, string? Address, string SharedLanguage, string Role, string? JoinCode);
-public record MemberDto(Guid UserId, string DisplayName, string Role, string? ApartmentNumber);
+public record MemberDto(Guid UserId, string DisplayName, string Role, string? ApartmentNumber, string? JoinedVia);
 public record BrowseBuildingDto(Guid Id, string Name, string? Address, bool Requested);
 public record CreateJoinRequest(string? ApartmentNumber);
 public record MyJoinRequestDto(Guid BuildingId, string BuildingName);
@@ -20,7 +19,8 @@ public record JoinRequestDto(Guid Id, string RequesterName, string RequesterEmai
 public record CreateInviteRequest(string? Title, int? MaxUses, int? ExpiresInDays);
 public record InviteDto(
     Guid Id, string Token, string Url, string? Title, int? MaxUses, int UsedCount,
-    DateTimeOffset? ExpiresAt, DateTimeOffset CreatedAt, bool Revoked, bool Active);
+    DateTimeOffset? ExpiresAt, DateTimeOffset CreatedAt, bool Revoked, bool Active,
+    IReadOnlyList<string> UsedBy);
 
 public static class BuildingEndpoints
 {
@@ -28,35 +28,8 @@ public static class BuildingEndpoints
     {
         var group = api.MapGroup("/buildings").RequireAuthorization();
 
-        group.MapPost("/", async (CreateBuildingRequest req, HttpContext ctx, KotirauhaDbContext db) =>
-        {
-            var userId = ctx.User.GetUserId();
-            if (userId is null) return Results.Unauthorized();
-            if (await db.Memberships.AnyAsync(m => m.UserId == userId))
-                return Results.Problem("You already belong to a building.", statusCode: 409);
-            if (string.IsNullOrWhiteSpace(req.Name))
-                return Results.Problem("Building name is required.", statusCode: 400);
-
-            var building = new Building
-            {
-                Name = req.Name.Trim(),
-                Address = req.Address?.Trim(),
-                SharedLanguage = string.IsNullOrWhiteSpace(req.SharedLanguage) ? "fi" : req.SharedLanguage!,
-                JoinCode = await GenerateUniqueJoinCodeAsync(db),
-            };
-            db.Buildings.Add(building);
-            db.Memberships.Add(new BuildingMembership
-            {
-                UserId = userId.Value,
-                BuildingId = building.Id,
-                Role = MembershipRole.Board,
-                ApartmentNumber = req.ApartmentNumber?.Trim(),
-            });
-            await db.SaveChangesAsync();
-
-            return Results.Ok(new BuildingDto(
-                building.Id, building.Name, building.Address, building.SharedLanguage, "board", building.JoinCode));
-        });
+        // Note: buildings are created by platform admins only (see AdminEndpoints).
+        // Residents join an existing building by code, invite link, or request.
 
         group.MapPost("/join", async (JoinBuildingRequest req, HttpContext ctx, KotirauhaDbContext db) =>
         {
@@ -75,6 +48,7 @@ public static class BuildingEndpoints
                 BuildingId = building.Id,
                 Role = MembershipRole.Resident,
                 ApartmentNumber = req.ApartmentNumber?.Trim(),
+                JoinedVia = "code",
             });
             await db.SaveChangesAsync();
 
@@ -108,7 +82,7 @@ public static class BuildingEndpoints
                 .Where(x => x.BuildingId == m.BuildingId)
                 .Include(x => x.User)
                 .Select(x => new MemberDto(
-                    x.UserId, x.User!.DisplayName, x.Role.ToString().ToLowerInvariant(), x.ApartmentNumber))
+                    x.UserId, x.User!.DisplayName, x.Role.ToString().ToLowerInvariant(), x.ApartmentNumber, x.JoinedVia))
                 .ToListAsync();
 
             return Results.Ok(members);
@@ -184,7 +158,19 @@ public static class BuildingEndpoints
                 .Where(i => i.BuildingId == m.BuildingId)
                 .OrderByDescending(i => i.CreatedAt)
                 .ToListAsync();
-            return Results.Ok(invites.Select(ToInviteDto));
+
+            // Names of members who joined through each invite link.
+            var usedBy = (await db.Memberships
+                    .Where(x => x.BuildingId == m.BuildingId && x.InviteId != null)
+                    .Include(x => x.User)
+                    .Select(x => new { x.InviteId, x.User!.DisplayName, x.User.Email })
+                    .ToListAsync())
+                .GroupBy(x => x.InviteId!.Value)
+                .ToDictionary(
+                    g => g.Key,
+                    g => (IReadOnlyList<string>)g.Select(u => string.IsNullOrWhiteSpace(u.DisplayName) ? u.Email : u.DisplayName).ToList());
+
+            return Results.Ok(invites.Select(i => ToInviteDto(i, usedBy.GetValueOrDefault(i.Id))));
         });
 
         group.MapPost("/invites/{inviteId:guid}/revoke", async (Guid inviteId, HttpContext ctx, KotirauhaDbContext db) =>
@@ -333,6 +319,7 @@ public static class BuildingEndpoints
                     BuildingId = r.BuildingId,
                     Role = MembershipRole.Resident,
                     ApartmentNumber = r.ApartmentNumber,
+                    JoinedVia = "request",
                 });
             }
             r.Status = JoinRequestStatus.Approved;
@@ -367,12 +354,13 @@ public static class BuildingEndpoints
     private static string NormalizeCode(string raw) =>
         new string(raw.Where(ch => !char.IsWhiteSpace(ch)).ToArray()).ToUpperInvariant();
 
-    internal static InviteDto ToInviteDto(BuildingInvite i)
+    internal static InviteDto ToInviteDto(BuildingInvite i, IReadOnlyList<string>? usedBy = null)
     {
         var appBase = (Environment.GetEnvironmentVariable("APP_BASE_URL") ?? "http://localhost:5173").TrimEnd('/');
         return new InviteDto(
             i.Id, i.Token, $"{appBase}/invite/{i.Token}", i.Title, i.MaxUses, i.UsedCount,
-            i.ExpiresAt, i.CreatedAt, i.RevokedAt is not null, i.IsUsable(DateTimeOffset.UtcNow));
+            i.ExpiresAt, i.CreatedAt, i.RevokedAt is not null, i.IsUsable(DateTimeOffset.UtcNow),
+            usedBy ?? []);
     }
 
     private static async Task<string> GenerateUniqueInviteTokenAsync(KotirauhaDbContext db)
@@ -386,7 +374,7 @@ public static class BuildingEndpoints
         return Guid.NewGuid().ToString("N");
     }
 
-    private static async Task<string> GenerateUniqueJoinCodeAsync(KotirauhaDbContext db)
+    internal static async Task<string> GenerateUniqueJoinCodeAsync(KotirauhaDbContext db)
     {
         const string alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
         for (var attempt = 0; attempt < 10; attempt++)

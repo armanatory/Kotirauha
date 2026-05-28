@@ -55,6 +55,8 @@ public class KotirauhaDbContext : DbContext
         {
             e.HasIndex(x => new { x.UserId, x.BuildingId }).IsUnique();
             e.Property(x => x.ApartmentNumber).HasMaxLength(32);
+            e.Property(x => x.JoinedVia).HasMaxLength(16);
+            e.HasIndex(x => x.InviteId);
             e.HasOne(x => x.User).WithMany(u => u.Memberships).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(x => x.Building).WithMany(g => g.Memberships).HasForeignKey(x => x.BuildingId).OnDelete(DeleteBehavior.Cascade);
         });

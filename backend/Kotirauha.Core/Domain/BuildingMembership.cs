@@ -10,4 +10,9 @@ public class BuildingMembership
     public MembershipRole Role { get; set; } = MembershipRole.Resident;
     public string? ApartmentNumber { get; set; }
     public DateTimeOffset JoinedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    // How this member came to belong: "code", "invite", "request", or "admin".
+    public string? JoinedVia { get; set; }
+    // The invitation link used, when JoinedVia == "invite".
+    public Guid? InviteId { get; set; }
 }

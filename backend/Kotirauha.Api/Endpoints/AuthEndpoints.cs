@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Google.Apis.Auth;
 using Kotirauha.Api.Common;
 using Kotirauha.Core.Abstractions;
 using Kotirauha.Core.Domain;
@@ -14,6 +15,7 @@ public record VerifyRequest(string Token);
 public record VerifyCodeRequest(string Email, string Code);
 public record VerifyResponse(string Token, bool ProfileComplete);
 public record UpdateProfileRequest(string? DisplayName, string? PreferredLanguage);
+public record GoogleSignInRequest(string Credential);
 
 public record MembershipDto(Guid BuildingId, string BuildingName, string SharedLanguage, string Role, string? ApartmentNumber);
 public record CurrentUserDto(Guid Id, string Email, string DisplayName, string PreferredLanguage, bool IsAdmin, MembershipDto? Membership);
@@ -23,6 +25,57 @@ public static class AuthEndpoints
     public static RouteGroupBuilder MapAuthEndpoints(this RouteGroupBuilder api)
     {
         var group = api.MapGroup("/auth");
+
+        // Public client config (e.g. whether Google sign-in is available).
+        group.MapGet("/config", () =>
+        {
+            var googleClientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
+            return Results.Ok(new { googleClientId = string.IsNullOrWhiteSpace(googleClientId) ? null : googleClientId });
+        });
+
+        // Sign in with a Google ID token. Google has already verified the email,
+        // so no magic-link step is needed.
+        group.MapPost("/google", async (GoogleSignInRequest req, KotirauhaDbContext db, IJwtTokenService jwt) =>
+        {
+            var clientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID");
+            if (string.IsNullOrWhiteSpace(clientId))
+                return Results.Problem("Google sign-in is not configured.", statusCode: 400);
+            if (string.IsNullOrWhiteSpace(req.Credential))
+                return Results.Problem("Missing Google credential.", statusCode: 400);
+
+            GoogleJsonWebSignature.Payload payload;
+            try
+            {
+                payload = await GoogleJsonWebSignature.ValidateAsync(
+                    req.Credential,
+                    new GoogleJsonWebSignature.ValidationSettings { Audience = [clientId] });
+            }
+            catch
+            {
+                return Results.Problem("Google sign-in failed.", statusCode: 401);
+            }
+
+            if (!payload.EmailVerified || string.IsNullOrWhiteSpace(payload.Email))
+                return Results.Problem("Your Google email is not verified.", statusCode: 401);
+
+            var address = payload.Email.Trim().ToLowerInvariant();
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Email == address);
+            if (user is null)
+            {
+                user = new User { Email = address, DisplayName = payload.Name?.Trim() ?? "", PreferredLanguage = "fi" };
+                db.Users.Add(user);
+            }
+            else if (string.IsNullOrWhiteSpace(user.DisplayName) && !string.IsNullOrWhiteSpace(payload.Name))
+            {
+                user.DisplayName = payload.Name!.Trim();
+            }
+
+            if (AdminConfig.IsAdminEmail(address) && !user.IsPlatformAdmin) user.IsPlatformAdmin = true;
+            if (!user.IsActive) return Results.Problem("This account is deactivated.", statusCode: 403);
+            await db.SaveChangesAsync();
+
+            return Results.Ok(new VerifyResponse(jwt.CreateToken(user), !string.IsNullOrWhiteSpace(user.DisplayName)));
+        });
 
         // Request a one-time login link by email (passwordless).
         group.MapPost("/magic-link", async (

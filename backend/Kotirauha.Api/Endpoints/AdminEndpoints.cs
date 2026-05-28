@@ -11,6 +11,7 @@ public record AdminBuildingDto(Guid Id, string Name, string SharedLanguage, int 
 public record TranslationStatusDto(string Provider, bool IsStub, string Note);
 public record AdminUserDto(Guid Id, string Email, string DisplayName, bool IsAdmin, Guid? BuildingId, string? BuildingName, string? Role);
 public record AssignRequest(Guid UserId, Guid? BuildingId, string Role);
+public record AdminCreateBuildingRequest(string Name, string? Address, string? SharedLanguage);
 public record CountRow(string Label, int Count);
 public record DayCount(string Date, int Count);
 public record AnalyticsDto(
@@ -53,6 +54,26 @@ public static class AdminEndpoints
             return Results.Ok(rows);
         });
 
+        // Create a building (platform admin only). No membership is added; the
+        // admin assigns a board member afterwards via /admin/assign.
+        group.MapPost("/buildings", async (AdminCreateBuildingRequest req, HttpContext ctx, KotirauhaDbContext db) =>
+        {
+            if (!await AdminGuard.IsAdminAsync(ctx, db)) return Forbidden();
+            if (string.IsNullOrWhiteSpace(req.Name))
+                return Results.Problem("Building name is required.", statusCode: 400);
+
+            var building = new Building
+            {
+                Name = req.Name.Trim(),
+                Address = string.IsNullOrWhiteSpace(req.Address) ? null : req.Address.Trim(),
+                SharedLanguage = req.SharedLanguage == "en" ? "en" : "fi",
+                JoinCode = await BuildingEndpoints.GenerateUniqueJoinCodeAsync(db),
+            };
+            db.Buildings.Add(building);
+            await db.SaveChangesAsync();
+            return Results.Ok(new AdminBuildingDto(building.Id, building.Name, building.SharedLanguage, 0, 0));
+        });
+
         group.MapGet("/users", async (HttpContext ctx, KotirauhaDbContext db) =>
         {
             if (!await AdminGuard.IsAdminAsync(ctx, db)) return Forbidden();
@@ -91,6 +112,7 @@ public static class AdminEndpoints
                     UserId = req.UserId,
                     BuildingId = req.BuildingId.Value,
                     Role = role,
+                    JoinedVia = "admin",
                 });
             }
 
