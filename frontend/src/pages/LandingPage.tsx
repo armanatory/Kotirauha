@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Smartphone, Apple } from "lucide-react";
 import { BRAND } from "@/lib/branding";
 
 export default function LandingPage() {
@@ -9,6 +10,7 @@ export default function LandingPage() {
       <h1 className="text-4xl font-semibold text-slate-800">{BRAND.name}</h1>
       <p className="mt-3 max-w-xl text-slate-600">{t("brand.description")}</p>
       <p className="mt-2 text-sm text-slate-400">{t("brand.tagline")}</p>
+
       <div className="mt-8 flex gap-3">
         <Link
           to="/login"
@@ -22,6 +24,26 @@ export default function LandingPage() {
         >
           {t("landing.createAccount")}
         </Link>
+      </div>
+
+      <div className="mt-10 w-full max-w-xs">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+          {t("landing.installPrompt")}
+        </p>
+        <div className="flex flex-col gap-2">
+          <Link
+            to="/install?p=android"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-100"
+          >
+            <Smartphone size={18} /> {t("landing.installAndroid")}
+          </Link>
+          <Link
+            to="/install?p=ios"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-100"
+          >
+            <Apple size={18} /> {t("landing.installIos")}
+          </Link>
+        </div>
       </div>
     </div>
   );

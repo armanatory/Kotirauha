@@ -4,6 +4,7 @@ import { useAuth } from "@/auth/AuthContext";
 import AuthLayout from "@/layouts/AuthLayout";
 import AppLayout from "@/layouts/AppLayout";
 import LandingPage from "@/pages/LandingPage";
+import InstallPage from "@/pages/InstallPage";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import VerifyPage from "@/pages/VerifyPage";
@@ -32,6 +33,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/install" element={<InstallPage />} />
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
