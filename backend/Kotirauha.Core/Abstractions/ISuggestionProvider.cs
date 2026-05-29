@@ -19,4 +19,8 @@ public interface ISuggestionProvider
 
     // Detect the likely category and location from what the resident has typed.
     Task<EntryClassification> ClassifyAsync(string text, CancellationToken ct = default);
+
+    // A friendly, neutral, anonymous display nickname in the given language
+    // (used so neighbours see a handle rather than a real name).
+    Task<string> SuggestNicknameAsync(string language, CancellationToken ct = default);
 }

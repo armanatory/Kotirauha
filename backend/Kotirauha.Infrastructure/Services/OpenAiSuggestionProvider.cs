@@ -106,6 +106,34 @@ public class OpenAiSuggestionProvider : ISuggestionProvider
         return new EntryClassification(cat, loc);
     }
 
+    private const string NicknamePrompt =
+        "Invent ONE friendly, neutral, anonymous nickname for a resident of an apartment building, " +
+        "so neighbours see a handle instead of a real name. Write it in the requested language. " +
+        "Two short words at most, suitable for all ages, never a real personal name, no numbers, no quotes, no punctuation. " +
+        "Reply with just the nickname.";
+
+    public async Task<string> SuggestNicknameAsync(string language, CancellationToken ct = default)
+    {
+        var langName = language == "en" ? "English" : "Finnish";
+        var payload = new
+        {
+            model = _model,
+            temperature = 1.0,
+            messages = new object[]
+            {
+                new { role = "system", content = NicknamePrompt },
+                new { role = "user", content = $"Language: {langName}." },
+            },
+        };
+
+        using var resp = await _http.PostAsJsonAsync("v1/chat/completions", payload, ct);
+        resp.EnsureSuccessStatusCode();
+        using var doc = JsonDocument.Parse(await resp.Content.ReadAsStringAsync(ct));
+        var name = doc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "";
+        name = name.Trim().Trim('"', '\'', '.').Replace("\n", " ").Trim();
+        return name.Length is > 0 and <= 40 ? name : "";
+    }
+
     private static IReadOnlyList<string> Parse(string content) =>
         content.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .Select(line => line.TrimStart('-', '*', '•', ' ').Trim())

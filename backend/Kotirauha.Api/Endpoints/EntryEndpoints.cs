@@ -17,7 +17,7 @@ public record EntryDetailDto(
     string? SubjectApartment, string OriginalText, string OriginalLanguage,
     string SharedLanguage, IReadOnlyList<TranslationDto> Translations,
     IReadOnlyList<Guid> AttachmentIds, DateTimeOffset CreatedAt, DateTimeOffset? EditedAt,
-    bool Archived, IReadOnlyList<RevisionDto> Revisions);
+    bool Archived, IReadOnlyList<RevisionDto> Revisions, bool CanSeeOriginal);
 public record RevisionDto(Guid Id, string PreviousText, DateTimeOffset EditedAt);
 
 public static class EntryEndpoints
@@ -191,7 +191,10 @@ public static class EntryEndpoints
                 .FirstOrDefaultAsync(x => x.Id == id && x.BuildingId == m.BuildingId);
             if (e is null) return Results.NotFound();
 
-            return Results.Ok(ToDetail(e, m.Building!.SharedLanguage));
+            // Anonymity: only the author and the board see the original wording
+            // and its language; other residents get the building's shared language.
+            var canSeeOriginal = e.ReporterUserId == userId || m.Role is MembershipRole.Board or MembershipRole.Admin;
+            return Results.Ok(ToDetail(e, m.Building!.SharedLanguage, canSeeOriginal));
         });
 
         // --- Edit (reporter only) -> revision + re-translate ---
@@ -383,23 +386,30 @@ public static class EntryEndpoints
             _ => "muu",
         };
 
-    internal static EntryDetailDto ToDetail(IncidentEntry e, string sharedLanguage) => new(
-        e.Id,
-        e.Category.ToString(),
-        e.OccurredAt,
-        e.Reporter!.DisplayName,
-        e.ReporterUserId,
-        e.SubjectApartment,
-        e.OriginalText,
-        e.OriginalLanguage,
-        sharedLanguage,
-        e.Translations.Select(t => new TranslationDto(
-            t.TargetLanguage, t.TranslatedText, t.Provider, t.Status.ToString().ToLowerInvariant(), t.IsMachineGenerated)).ToList(),
-        e.Attachments.Select(a => a.Id).ToList(),
-        e.CreatedAt,
-        e.EditedAt,
-        e.ArchivedAt is not null,
-        e.Revisions.OrderByDescending(r => r.EditedAt).Select(r => new RevisionDto(r.Id, r.PreviousText, r.EditedAt)).ToList());
+    internal static EntryDetailDto ToDetail(IncidentEntry e, string sharedLanguage, bool canSeeOriginal = true)
+    {
+        // Other residents see only the building's shared-language text and never
+        // the original wording, its language, or the edit history — so the writer
+        // can't be identified by language. The original stays intact in the DB.
+        if (!canSeeOriginal)
+        {
+            return new EntryDetailDto(
+                e.Id, e.Category.ToString(), e.OccurredAt, e.Reporter!.DisplayName, e.ReporterUserId,
+                e.SubjectApartment, SharedText(e, sharedLanguage), sharedLanguage, sharedLanguage,
+                [], e.Attachments.Select(a => a.Id).ToList(),
+                e.CreatedAt, e.EditedAt, e.ArchivedAt is not null, [], false);
+        }
+
+        return new EntryDetailDto(
+            e.Id, e.Category.ToString(), e.OccurredAt, e.Reporter!.DisplayName, e.ReporterUserId,
+            e.SubjectApartment, e.OriginalText, e.OriginalLanguage, sharedLanguage,
+            e.Translations.Select(t => new TranslationDto(
+                t.TargetLanguage, t.TranslatedText, t.Provider, t.Status.ToString().ToLowerInvariant(), t.IsMachineGenerated)).ToList(),
+            e.Attachments.Select(a => a.Id).ToList(),
+            e.CreatedAt, e.EditedAt, e.ArchivedAt is not null,
+            e.Revisions.OrderByDescending(r => r.EditedAt).Select(r => new RevisionDto(r.Id, r.PreviousText, r.EditedAt)).ToList(),
+            true);
+    }
 }
 
 public record EditEntryRequest(string? OriginalText, DateTimeOffset? OccurredAt, string? Category, string? SubjectApartment);

@@ -57,4 +57,15 @@ public class StubSuggestionProvider : ISuggestionProvider
 
         return Task.FromResult(new EntryClassification(category, location));
     }
+
+    private static readonly string[] NickFi =
+        ["Rauhallinen naapuri", "Hiljainen asukas", "Ystävällinen naapuri", "Tyyni asukas", "Huomaavainen naapuri", "Kohtelias asukas"];
+    private static readonly string[] NickEn =
+        ["Quiet Neighbour", "Friendly Resident", "Calm Neighbour", "Kind Resident", "Thoughtful Neighbour", "Polite Resident"];
+
+    public Task<string> SuggestNicknameAsync(string language, CancellationToken ct = default)
+    {
+        var pool = language == "en" ? NickEn : NickFi;
+        return Task.FromResult(pool[Random.Shared.Next(pool.Length)]);
+    }
 }

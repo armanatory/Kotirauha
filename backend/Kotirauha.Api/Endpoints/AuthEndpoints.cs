@@ -199,6 +199,27 @@ public static class AuthEndpoints
             return Results.Ok(new VerifyResponse(jwt.CreateToken(user), !string.IsNullOrWhiteSpace(user.DisplayName)));
         });
 
+        // Suggest an anonymous nickname (in the building's language when known).
+        group.MapGet("/suggest-nickname", async (HttpContext ctx, KotirauhaDbContext db, ISuggestionProvider suggester, string? lang) =>
+        {
+            var userId = ctx.User.GetUserId();
+            if (userId is null) return Results.Unauthorized();
+
+            var membership = await db.GetMembershipAsync(userId.Value);
+            var language = membership?.Building?.SharedLanguage ?? NormalizeLang(lang);
+            language = language == "en" ? "en" : "fi";
+
+            try
+            {
+                var nickname = await suggester.SuggestNicknameAsync(language);
+                return Results.Ok(new { nickname });
+            }
+            catch
+            {
+                return Results.Ok(new { nickname = "" });
+            }
+        }).RequireAuthorization().RequireRateLimiting("ai");
+
         group.MapGet("/me", async (HttpContext ctx, KotirauhaDbContext db) =>
         {
             var userId = ctx.User.GetUserId();
