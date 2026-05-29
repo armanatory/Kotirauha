@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useQueryClient } from "@tanstack/react-query";
 import { Home, PlusCircle, Building2, BarChart3, BookOpen, Shield, User, LogOut } from "lucide-react";
+import { api } from "@/lib/api";
 import { useAuth } from "@/auth/AuthContext";
 import { BRAND } from "@/lib/branding";
 import InstallHint from "@/components/InstallHint";
@@ -26,7 +28,20 @@ export default function AppLayout() {
   const { t } = useTranslation();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const isBoard = user?.membership?.role === "board" || user?.membership?.role === "admin";
+
+  // Warm the AI report drafts as soon as the app opens, so they're ready the
+  // moment the resident taps "Report" (most people open the app to write one).
+  const hasBuilding = !!user?.membership;
+  useEffect(() => {
+    if (!hasBuilding) return;
+    void qc.prefetchQuery({
+      queryKey: ["entry-suggestions", 0],
+      queryFn: async () => (await api.get<{ suggestions: string[] }>("/entries/suggestions")).data.suggestions,
+      staleTime: 30 * 60 * 1000,
+    });
+  }, [hasBuilding, qc]);
   const isAdmin = user?.isAdmin ?? false;
   const items = navItems.filter((item) => !item.boardOnly || isBoard);
 

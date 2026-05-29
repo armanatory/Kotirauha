@@ -126,7 +126,7 @@ export default function EntryDetailPage() {
 
       <section className="bg-white border border-slate-200 rounded-xl p-4">
         <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">
-          {t("entry.original")} · {langName(e.originalLanguage)}
+          {e.canSeeOriginal ? `${t("entry.original")} · ${langName(e.originalLanguage)}` : t("entry.report")}
         </div>
         {editing ? (
           <div className="space-y-2">

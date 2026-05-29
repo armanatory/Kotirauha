@@ -78,6 +78,7 @@ export interface EntryDetail {
   editedAt: string | null;
   archived: boolean;
   revisions: RevisionDto[];
+  canSeeOriginal: boolean;
 }
 
 export interface BuildingDto {
