@@ -12,7 +12,6 @@ export default function RegisterPage() {
   const { t, i18n } = useTranslation();
   const { requestMagicLink } = useAuth();
   const [email, setEmail] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [language, setLanguage] = useState(i18n.language === "en" ? "en" : "fi");
   const [submitting, setSubmitting] = useState(false);
   const [sent, setSent] = useState(false);
@@ -23,7 +22,7 @@ export default function RegisterPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const { devLink, devCode } = await requestMagicLink({ email, displayName, preferredLanguage: language });
+      const { devLink, devCode } = await requestMagicLink({ email, preferredLanguage: language });
       setDevLink(devLink ?? null);
       setDevCode(devCode ?? null);
       setSent(true);
@@ -43,15 +42,6 @@ export default function RegisterPage() {
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <h2 className="text-lg font-semibold text-slate-800">{t("auth.register")}</h2>
       <p className="text-sm text-slate-500">{t("auth.registerIntro")}</p>
-      <label className="flex flex-col gap-1 text-sm">
-        <span className="text-slate-600">{t("auth.name")}</span>
-        <input
-          required
-          value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
-          className="border border-slate-300 rounded-lg px-3 py-2"
-        />
-      </label>
       <label className="flex flex-col gap-1 text-sm">
         <span className="text-slate-600">{t("auth.email")}</span>
         <input
