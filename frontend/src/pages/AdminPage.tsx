@@ -223,9 +223,14 @@ export default function AdminPage() {
             const set = (patch: Partial<typeof cur>) => setPending((p) => ({ ...p, [u.id]: { ...cur, ...patch } }));
             return (
               <li key={u.id} className="py-3">
-                <div className="flex items-center gap-2 mb-2 text-sm">
-                  <span className="font-medium text-slate-700 break-all">{u.email}</span>
-                  {u.isAdmin && <span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-700 text-white shrink-0">{t("admin.adminBadge")}</span>}
+                <div className="mb-2 text-sm">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium text-slate-700">
+                      {u.displayName || <em className="text-slate-400 font-normal">{t("admin.noNickname")}</em>}
+                    </span>
+                    {u.isAdmin && <span className="text-[10px] px-1.5 py-0.5 rounded bg-teal-700 text-white shrink-0">{t("admin.adminBadge")}</span>}
+                  </div>
+                  <p className="text-xs text-slate-400 break-all">{u.email}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <select
